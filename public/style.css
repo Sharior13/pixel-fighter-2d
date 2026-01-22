@@ -8,4 +8,13 @@
     border: 1px solid black;
     width: 80%;
     height: 80%;
+    z-index: -1;
+}
+#title-form{
+    position: relative;
+    z-index: 1;
+    align-items: center;
+}
+#title-form button{
+    text-align: center;
 }
