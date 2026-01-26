@@ -6,9 +6,9 @@ const titleDiv = document.getElementById('title-screen');
 // const playerName = document.getElementById('player-name');
 
 const titleScreen = ()=>{
-    canvas.style.backgroundImage = "url('./assets/title-bg.gif')";
-    titleDiv.style.display = "flex";
+    showTitleScreen();
 
+    //listen to player clicking buttons and react accordingly
     titleDiv.addEventListener('click', (event)=>{
         if(!event.target.classList.contains('btn')){
             return;
@@ -21,6 +21,7 @@ const titleScreen = ()=>{
             case "room-btn":
                 console.log("chalyooo");
                 //show popup and take room id then start game with that room id
+                    // startGame("custom", roomId);
                 break;
             case "settings-btn":
                 //show settings
@@ -34,11 +35,20 @@ const titleScreen = ()=>{
     });
 };
 
-const startGame = (mode, id)=>{
+const startGame = (mode, roomId)=>{
+    hideTitleScreen();
+    initializeSocket(mode, roomId);
+    initializeRender();
+};
+
+const hideTitleScreen = ()=>{
     canvas.style.backgroundImage = 'none';
     titleDiv.style.display = 'none';
-    initializeSocket(mode, id);
-    initializeRender();
+};
+
+const showTitleScreen = ()=>{
+    canvas.style.backgroundImage = "url('./assets/title-bg.gif')";
+    titleDiv.style.display = "flex";
 };
 
 titleScreen();

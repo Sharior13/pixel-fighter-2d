@@ -1,20 +1,23 @@
 let socket = null;
 
-const initializeSocket = (mode, id)=>{
+const initializeSocket = (mode, roomId)=>{
     if(socket){
         return;
     }
 
     socket = io();
 
-    socket.emit("startMatch", mode, id);
+    //start match process
+    socket.emit("startMatch", mode, roomId);
 
-    socket.on("queueJoined", ()=>{});
+    socket.on("queueJoined", ()=>{
+        //add loading image for queue 
+    });
 
     socket.on("matchFound", ({ roomId, playerIndex }) => {
         console.log("Match found!", roomId);
 
-        joinGameRoom(roomId, playerIndex);
+        // joinGameRoom(roomId, playerIndex);
     });
 };
 
