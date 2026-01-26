@@ -6,12 +6,23 @@
     <title>Pixel Fighter 2d</title>
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body> 
     <canvas id="canvas"></canvas>
-    <form id="title-form">
-        <input type="text" id="player-name" placeholder="Enter your name" required><br>
-        <button>Play</button>
-    </form>
+    <!-- Title screen ui -->
+    <div id="title-screen"> 
+        <div class="title-box">
+            <img src="./assets/title-logo-red.png" alt="title-logo">
+        </div>
+        <div class="top-buttons">
+            <button class="btn btn-large" id="quick-start-btn">Quick Play</button>
+            <button class="btn btn-large" id="room-btn">Create / Join Room</button>
+        </div>
+        <div class="bottom-buttons">
+            <button class="btn btn-small" id="settings-btn">Settings</button>
+            <button class="btn btn-small" id="profile-btn">Profile</button>
+        </div>
+        
+    </div>
     <!-- <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script> -->
     <script src="/socket.io/socket.io.js"></script>
     <script type="module" src="./js/main.js"></script>

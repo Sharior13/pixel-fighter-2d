@@ -1,6 +1,14 @@
 *{
     /* margin: 0;
     padding: 0; */
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
+}
+body{
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     overflow: hidden;
 }
 
@@ -9,12 +17,70 @@
     width: 80%;
     height: 80%;
     z-index: -1;
+    position: absolute;
 }
-#title-form{
-    position: relative;
-    z-index: 1;
+
+
+/* Title screen ui */
+#title-screen{
+    width: 100%;
+    display: flex;
+    flex-direction: column;
     align-items: center;
+    gap: 22px;
+    overflow: visible;
 }
-#title-form button{
+.title-box{
+    width: 100%;
     text-align: center;
+}
+
+/* Buttons */
+.top-buttons{
+    width: 100%;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 22px;
+}
+
+.btn{
+    background-image: linear-gradient(to right, #ff001e 0%, #EA384D  51%, #ff001e  100%);
+    border: none;
+    color: white;
+    border-radius: 22px;
+    background-size: 200% auto;
+    box-shadow: 0 0 20px #eee;
+    display: block;
+    cursor: pointer;
+    transition: 0.5s ease, transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.btn:hover{
+    background-position: right center;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+}
+
+.btn:active{
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+.btn-large{
+    width: 70%;
+    padding: 18px 0;
+    font-size: 28px;
+}
+
+.bottom-buttons{
+    display: flex;
+    gap: 20px;
+}
+
+.btn-small{
+    width: 160px;
+    padding: 16px 0;
+    font-size: 24px;
 }
