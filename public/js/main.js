@@ -9,26 +9,38 @@ const titleScreen = ()=>{
     canvas.style.backgroundImage = "url('./assets/title-bg.gif')";
     titleDiv.style.display = "flex";
 
-    const button = document.querySelector('.btn');
-    button.addEventListener('click', ()=>{
-        switch(button.id){
+    titleDiv.addEventListener('click', (event)=>{
+        if(!event.target.classList.contains('btn')){
+            return;
+        }
+
+        switch(event.target.id){
             case "quick-start-btn":
-                startGame("quick-start");
+                startGame("quickStart");
+                break;
             case "room-btn":
+                console.log("chalyooo");
                 //show popup and take room id then start game with that room id
+                break;
             case "settings-btn":
                 //show settings
-            case "profile":
+                break;
+            case "profile-btn":
                 //show player name change option and login option
+                break;
+            default:
+                break;
         }
     });
 };
-const startGame = (mode)=>{
+
+const startGame = (mode, id)=>{
     canvas.style.backgroundImage = 'none';
     titleDiv.style.display = 'none';
-    initializeSocket(mode);
+    initializeSocket(mode, id);
     initializeRender();
 };
+
 titleScreen();
 
 export { titleScreen };
