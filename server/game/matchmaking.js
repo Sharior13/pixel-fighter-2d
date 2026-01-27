@@ -1,4 +1,4 @@
-const { matches, createMatch } = require("./matchManager.js");
+const { matches, createMatch, startCharacterSelectTimeout } = require("./matchManager.js");
 
 const ROOM_ID_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 const QUEUE_SIZE = 2;
@@ -35,6 +35,7 @@ const tryMatch = ()=>{
 
     const roomId = generateRoomCode();
     const match = createMatch(roomId, players);
+    startCharacterSelectTimeout(match);
 
     //make each player join the match room
     players.forEach((player, index)=>{
@@ -47,6 +48,8 @@ const tryMatch = ()=>{
     });
 
     console.log(`Match created: ${roomId}`);
+
+    return match;
 };
 
 //generate random room id that doesnt already exist

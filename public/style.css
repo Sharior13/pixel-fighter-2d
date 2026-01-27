@@ -24,6 +24,9 @@ body{
     position: absolute;
 }
 
+.hidden {
+    display: none;
+}
 
 /* title screen ui */
 #title-screen{
@@ -43,7 +46,7 @@ body{
     pointer-events: none;
 }
 
-/* buttons */
+/* title screen ui buttons */
 .top-buttons{
     width: 100%;
     max-width: 500px;
@@ -90,4 +93,20 @@ body{
     width: 160px;
     padding: 16px 0;
     font-size: 24px;
+}
+
+/* character select ui */
+#character-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+.character-btn {
+    padding: 12px;
+    font-size: 16px;
+    cursor: pointer;
+}
+.character-btn.selected {
+    border: 2px solid #00ff88;
+    background: #003322;
 }

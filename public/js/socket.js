@@ -1,3 +1,5 @@
+import { openCharacterSelect, showOpponentPreview } from "./characterSelect.js";
+
 let socket = null;
 
 const initializeSocket = (mode, roomId)=>{
@@ -8,7 +10,7 @@ const initializeSocket = (mode, roomId)=>{
     socket = io();
 
     //start match process
-    socket.emit("startMatch", mode, roomId);
+    socket.emit("findMatch", mode, roomId);
 
     socket.on("queueJoined", ()=>{
         //add loading image for queue 
@@ -16,9 +18,31 @@ const initializeSocket = (mode, roomId)=>{
 
     socket.on("matchFound", ({ roomId, playerIndex }) => {
         console.log("Match found!", roomId);
+        openCharacterSelect();
+    });
 
-        // joinGameRoom(roomId, playerIndex);
+    socket.on("characterPreview", ({ socketId, characterId })=>{
+        if(socketId === socket.id){
+          return;
+        }
+
+        showOpponentPreview(socketId, characterId);
+    });
+
+    socket.on("playerLocked", (socketId)=>{
+        if(socketId === socket.id){
+          return;
+        }
+
+        document.getElementById("statusText").textContent =
+          "Opponent locked in!";
+    });
+
+    socket.on("startMatch", ({ players }) => {
+        document.getElementById("character-select").classList.add("hidden");
+        
+        // startFight(players);
     });
 };
 
-export { initializeSocket };
+export { initializeSocket, socket };
