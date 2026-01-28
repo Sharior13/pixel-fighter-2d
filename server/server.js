@@ -4,7 +4,6 @@ const { join } = require('node:path');
 const { Server } = require('socket.io');
 
 const { socketHandler } = require('./networking/socketHandler.js');
-const { gameLoop } = require('./game/gameLoop.js');
 
 const port = 2000;
 const app = express();
@@ -27,9 +26,6 @@ app.use((req, res)=>{
 
 //handle socket events
 socketHandler(io);
-
-//handle server side gameloop
-gameLoop();
 
 
 server.listen(port, ()=>{

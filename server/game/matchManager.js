@@ -1,3 +1,6 @@
+const { GAME_CONFIG } = require('./gameState.js')
+const { validateCharacter, getRandomCharacter } = require('./characterData.js');
+
 const matches = new Map();
 const lockTimeouts = new Map();
 
@@ -39,12 +42,16 @@ const selectCharacter = (socket, characterId)=>{
     const match = getMatchBySocket(socket);
 
     if(!match || match.phase !== "CHARACTER_SELECT"){
-        return;
+        return null;
+    }
+
+    if(!validateCharacter(characterId)){
+        return null;
     }
 
     const player = match.players.find(p => p.socketId === socket.id);
     if(!player || player.locked){
-        return;
+        return null;
     }
 
     player.character = characterId;
@@ -57,7 +64,7 @@ const lockCharacter = (socket)=>{
     const match = getMatchBySocket(socket);
 
     if(!match || match.phase !== "CHARACTER_SELECT"){
-        return;
+        return null;
     }
 
     const player = match.players.find(p => p.socketId === socket.id);
@@ -75,7 +82,7 @@ const lockCharacter = (socket)=>{
 };
 
 //character selection time limit logic
-const startCharacterSelectTimeout = (match, startOnTimeout, duration = 15000)=>{
+const startCharacterSelectTimeout = (match, startOnTimeout, duration = GAME_CONFIG.charSelectTimeout)=>{
     if(lockTimeouts.has(match.roomId)){
         return;
     }
@@ -119,12 +126,6 @@ const startFight = (match)=>{
             character: p.character
         }))
     };
-};
-
-//give random character on player failing to lock in
-const getRandomCharacter = ()=>{
-    const characters = ["luffy", "naruto", "zoro", "kakashi"];
-    return characters[Math.floor(Math.random() * characters.length)];
 };
 
 //clear timeout on lock in

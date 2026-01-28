@@ -1,5 +1,6 @@
 const { initMatchmaking, addToQueue, removeFromQueue } = require('../game/matchMaking.js');
 const { getMatchBySocket, selectCharacter, lockCharacter, deleteMatch } = require('../game/matchManager.js');
+const { initializeGameState, processInput, startGameLoop, getGameState, deleteGameState } = require('../game/gameState.js');
 
 const socketHandler = (io)=>{
 
@@ -55,7 +56,51 @@ const socketHandler = (io)=>{
             });
 
             if(fightData){
-                io.to(fightData.roomId).emit("startMatch", fightData);
+                console.log("All players locked, starting match");
+                
+                //initialize server-authoritative game state
+                try{
+                    const gameState = initializeGameState(fightData.roomId, fightData.players);
+                    
+                    //emit startMatch with initial game state
+                    io.to(fightData.roomId).emit("startMatch", {
+                        roomId: fightData.roomId,
+                        players: fightData.players,
+                        gameState: {
+                            players: gameState.players.map(p => ({
+                                socketId: p.socketId,
+                                playerIndex: p.playerIndex,
+                                character: p.character,
+                                position: p.position,
+                                health: p.health,
+                                maxHealth: p.maxHealth
+                            }))
+                        }
+                    });
+                    
+                    //start the server-side game loop
+                    startGameLoop(fightData.roomId, io);
+                } catch(error){
+                    io.to(fightData.roomId).emit("matchError", {
+                        message: "Failed to start match"
+                    });
+                }
+            }
+        });
+
+        //handle player input during fight
+        socket.on("playerInput", (input)=>{
+            const match = getMatchBySocket(socket);
+            
+            if(!match || match.phase !== "FIGHT"){
+                return;
+            }
+            
+            //process input through server-side game state
+            const result = processInput(match.roomId, socket.id, input);
+            
+            if(!result){
+                console.warn("failed to process input for:", socket.id);
             }
         });
 
@@ -64,16 +109,33 @@ const socketHandler = (io)=>{
             console.log("Player disconnected");
 
             removeFromQueue(socket);
-
+            
             const match = getMatchBySocket(socket);
             if(!match){ 
                 return;
             }
-            if(match.phase === "CHARACTER_SELECT"){
-                deleteMatch(match.roomId);
-            }
 
             io.to(match.roomId).emit("playerDisconnected", socket.id);
+
+            if(match.phase === "CHARACTER_SELECT"){
+                deleteMatch(match.roomId);
+            } 
+            else if(match.phase === "FIGHT"){
+                //end the game if a player disconnects during fight
+                const gameState = getGameState(match.roomId);
+
+                if(gameState){
+                    const remainingPlayer = gameState.players.find(p => p.socketId !== socket.id);
+                    if(remainingPlayer){
+                        io.to(match.roomId).emit("matchEnd", {
+                            winner: remainingPlayer.socketId,
+                            reason: "opponent_disconnected"
+                        });
+                    }
+                }
+                deleteGameState(match.roomId);
+                deleteMatch(match.roomId);
+            }
         });
     });
 };
