@@ -67,28 +67,40 @@ const lockCharacter = (socket)=>{
 
     player.locked = true;
 
-    return match.players.every(p => p.locked);
+    if(match.players.every(p => p.locked)){
+        clearCharacterSelectTimeout(match.roomId);
+        return startFight(match);
+    }
+    return null;
 };
 
 //character selection time limit logic
-const startCharacterSelectTimeout = (match, duration = 15000)=>{
+const startCharacterSelectTimeout = (match, startOnTimeout, duration = 15000)=>{
     if(lockTimeouts.has(match.roomId)){
         return;
     }
 
     const timeoutId = setTimeout(()=>{
+        const currentMatch = matches.get(match.roomId);
+
         if(match.phase !== "CHARACTER_SELECT"){ 
             return;
         }
 
-        match.players.forEach((p)=>{
+        currentMatch.players.forEach((p)=>{
             if(!p.character){
                 p.character = getRandomCharacter();
             }
             p.locked = true;
         });
 
-        match.phase = "FIGHT";
+        const fightData = startFight(currentMatch);
+        lockTimeouts.delete(match.roomId);
+
+        if(typeof startOnTimeout === "function"){
+            startOnTimeout(fightData);
+        }
+
     }, duration);
 
     lockTimeouts.set(match.roomId, timeoutId);
@@ -114,4 +126,18 @@ const getRandomCharacter = () => {
     return characters[Math.floor(Math.random() * characters.length)];
 };
 
-module.exports = { matches, createMatch, getMatch, getMatchBySocket, selectCharacter, lockCharacter, startCharacterSelectTimeout };
+//clear timeout on lock in
+const clearCharacterSelectTimeout = (roomId) => {
+    if(lockTimeouts.has(roomId)){
+        clearTimeout(lockTimeouts.get(roomId));
+        lockTimeouts.delete(roomId);
+    }
+};
+
+//cleanup match data
+const deleteMatch = (roomId) => {
+    clearCharacterSelectTimeout(roomId);
+    matches.delete(roomId);
+};
+
+module.exports = { matches, createMatch, getMatch, getMatchBySocket, selectCharacter, lockCharacter, startCharacterSelectTimeout, clearCharacterSelectTimeout, deleteMatch };

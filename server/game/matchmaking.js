@@ -7,13 +7,13 @@ const queue = [];
 //add players to matchmaking queue
 const addToQueue = (socket)=>{
     if(queue.find((p)=> p.id === socket.id)){
-        return;
+        return null;
     }
 
     queue.push(socket);
     console.log("Queued:", socket.id);
 
-    tryMatch();
+    return tryMatch();
 };
 
 //remove players from matchmaking queue
@@ -21,13 +21,14 @@ const removeFromQueue = (socket)=>{
     const index = queue.findIndex(p => p.id === socket.id);
     if (index !== -1){
         queue.splice(index, 1);
+        console.log("Removed from queue:", socket.id);
     }
 };
 
 //start match phase on full queue
 const tryMatch = ()=>{
     if(queue.length < QUEUE_SIZE){
-        return;
+        return null;
     }
 
     //add players in queue to plsyers variable and reset queue
@@ -35,16 +36,10 @@ const tryMatch = ()=>{
 
     const roomId = generateRoomCode();
     const match = createMatch(roomId, players);
-    startCharacterSelectTimeout(match);
 
     //make each player join the match room
-    players.forEach((player, index)=>{
+    players.forEach((player)=>{
         player.join(roomId);
-        player.emit("matchFound", {
-            roomId,
-            playerIndex: index,
-            phase: match.phase
-        });
     });
 
     console.log(`Match created: ${roomId}`);
@@ -56,6 +51,7 @@ const tryMatch = ()=>{
 const generateRoomCode = (length = 5)=>{
     let code = "";
     do{
+        code = "";
         for (let i = 0; i < length; i++) {
             code += ROOM_ID_CHARS[Math.floor(Math.random() * ROOM_ID_CHARS.length)];
         }

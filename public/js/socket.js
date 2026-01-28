@@ -13,11 +13,14 @@ const initializeSocket = (mode, roomId)=>{
     socket.emit("findMatch", mode, roomId);
 
     socket.on("queueJoined", ()=>{
-        //add loading image for queue 
+        //add loading image for queue later
+        document.getElementById("queuing").classList.remove("hidden");
+        document.getElementById("queuing").innerHTML = `<p>Queue started!</p>`;
     });
 
     socket.on("matchFound", ({ roomId, playerIndex }) => {
         console.log("Match found!", roomId);
+        document.getElementById("queuing").classList.add("hidden");
         openCharacterSelect();
     });
 
@@ -29,7 +32,7 @@ const initializeSocket = (mode, roomId)=>{
         showOpponentPreview(socketId, characterId);
     });
 
-    socket.on("playerLocked", (socketId)=>{
+    socket.on("playerLocked", ({socketId})=>{
         if(socketId === socket.id){
           return;
         }
