@@ -83,7 +83,7 @@ const startCharacterSelectTimeout = (match, startOnTimeout, duration = 15000)=>{
     const timeoutId = setTimeout(()=>{
         const currentMatch = matches.get(match.roomId);
 
-        if(match.phase !== "CHARACTER_SELECT" || !currentMatch){ 
+        if(currentMatch.phase !== "CHARACTER_SELECT" || !currentMatch){ 
             lockTimeouts.delete(match.roomId);
             return;
         }
@@ -96,7 +96,7 @@ const startCharacterSelectTimeout = (match, startOnTimeout, duration = 15000)=>{
         });
 
         const fightData = startFight(currentMatch);
-        lockTimeouts.delete(match.roomId);
+        lockTimeouts.delete(currentMatch.roomId);
 
         if(typeof startOnTimeout === "function"){
             startOnTimeout(fightData);
