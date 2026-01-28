@@ -3,6 +3,11 @@ const { matches, createMatch, startCharacterSelectTimeout } = require("./matchMa
 const ROOM_ID_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 const QUEUE_SIZE = 2;
 const queue = [];
+let ioInstance = null;
+
+const initMatchmaking = (io) => {
+    ioInstance = io;
+};
 
 //add players to matchmaking queue
 const addToQueue = (socket)=>{
@@ -31,6 +36,11 @@ const tryMatch = ()=>{
         return null;
     }
 
+    if(!ioInstance){
+        console.error("io instance not initialized");
+        return null;
+    }
+
     //add players in queue to plsyers variable and reset queue
     const players = queue.splice(0, QUEUE_SIZE);
 
@@ -43,6 +53,19 @@ const tryMatch = ()=>{
     });
 
     console.log(`Match created: ${roomId}`);
+
+    ioInstance.to(match.roomId).emit("matchFound", {
+        roomId: match.roomId,
+        players: match.players.map(p => ({
+            socketId: p.socketId,
+            playerIndex: p.playerIndex
+        }))
+    });
+
+    // start the character selection timeout
+    startCharacterSelectTimeout(match, (fightData) => {
+        ioInstance.to(fightData.roomId).emit("startMatch", fightData);
+    });
 
     return match;
 };
@@ -59,4 +82,4 @@ const generateRoomCode = (length = 5)=>{
     return code;
 };
 
-module.exports = { addToQueue, removeFromQueue };
+module.exports = { initMatchmaking, addToQueue, removeFromQueue };

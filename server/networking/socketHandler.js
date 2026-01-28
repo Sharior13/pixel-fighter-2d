@@ -1,32 +1,18 @@
-const { addToQueue, removeFromQueue } = require('../game/matchmaking.js');
-const { getMatchBySocket, selectCharacter, lockCharacter, startCharacterSelectTimeout, deleteMatch } = require('../game/matchManager.js');
+const { initMatchmaking, addToQueue, removeFromQueue } = require('../game/matchMaking.js');
+const { getMatchBySocket, selectCharacter, lockCharacter, deleteMatch } = require('../game/matchManager.js');
 
 const socketHandler = (io)=>{
+
+    //pass io to matchmaking.js
+    initMatchmaking(io);
     io.on('connection', (socket)=>{
         console.log("player connected");
         
         //start match process when player presses quick play or custom room
         socket.on("findMatch", (mode, roomId)=>{
             if(mode === "quickStart"){
-                const match = addToQueue(socket);
+                addToQueue(socket);
                 socket.emit("queueJoined");
-                if(!match){
-                    return;
-                }
-
-                //emit status on match found
-                io.to(match.roomId).emit("matchFound", {
-                    roomId: match.roomId,
-                    players: match.players.map(p => ({
-                        socketId: p.socketId,
-                        playerIndex: p.playerIndex
-                    }))
-                });
-
-                //start match time out
-                startCharacterSelectTimeout(match, (fightData)=>{
-                    io.to(fightData.roomId).emit("fightStart", fightData);
-                });
             }
             else if(mode === "custom"){
                 // socket.join(roomId);
@@ -59,6 +45,7 @@ const socketHandler = (io)=>{
                 return;
             }
 
+            // lock the character and get fight data if all players are locked
             const fightData = lockCharacter(socket);
 
             io.to(match.roomId).emit("playerLocked", {

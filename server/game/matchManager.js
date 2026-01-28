@@ -83,7 +83,8 @@ const startCharacterSelectTimeout = (match, startOnTimeout, duration = 15000)=>{
     const timeoutId = setTimeout(()=>{
         const currentMatch = matches.get(match.roomId);
 
-        if(match.phase !== "CHARACTER_SELECT"){ 
+        if(match.phase !== "CHARACTER_SELECT" || !currentMatch){ 
+            lockTimeouts.delete(match.roomId);
             return;
         }
 
@@ -121,13 +122,13 @@ const startFight = (match)=>{
 };
 
 //give random character on player failing to lock in
-const getRandomCharacter = () => {
+const getRandomCharacter = ()=>{
     const characters = ["luffy", "naruto", "zoro", "kakashi"];
     return characters[Math.floor(Math.random() * characters.length)];
 };
 
 //clear timeout on lock in
-const clearCharacterSelectTimeout = (roomId) => {
+const clearCharacterSelectTimeout = (roomId)=>{
     if(lockTimeouts.has(roomId)){
         clearTimeout(lockTimeouts.get(roomId));
         lockTimeouts.delete(roomId);
@@ -135,7 +136,7 @@ const clearCharacterSelectTimeout = (roomId) => {
 };
 
 //cleanup match data
-const deleteMatch = (roomId) => {
+const deleteMatch = (roomId)=>{
     clearCharacterSelectTimeout(roomId);
     matches.delete(roomId);
 };
