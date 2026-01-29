@@ -6,7 +6,7 @@ const gameLoopIntervals = new Map();
 const GAME_CONFIG = {
     tickRate: 60,
     tickInterval: 1000 / 60,
-    charSelectTimeout: 10000,
+    charSelectTimeout: 100,
     matchDuration: 180000,
     gravity: 0.5,
     groundY: 400,
@@ -41,7 +41,12 @@ const initializeGameState = (roomId, playerData)=>{
                 socketId: p.socketId,
                 playerIndex: p.playerIndex,
                 character: p.character,
-                
+
+                size: {
+                    width: 75,
+                    height: 150
+                },
+
                 //position and movement
                 position: {
                     x: index === 0 ? 200 : 600,
@@ -52,6 +57,7 @@ const initializeGameState = (roomId, playerData)=>{
                     y: 0
                 },
                 facing: index === 0 ? 1 : -1,
+                currentDirection: 0,
                 
                 //flags
                 isGrounded: true,
@@ -108,6 +114,7 @@ const getGameState = (roomId)=>{
     return gameStates.get(roomId);
 };
 
+
 //update cooldown
 const updateCooldowns = (player, deltaTime)=>{
     if(player.cooldowns.basic > 0){
@@ -120,6 +127,7 @@ const updateCooldowns = (player, deltaTime)=>{
         player.cooldowns.ultimate = Math.max(0, player.cooldowns.ultimate - deltaTime);
     }
 };
+
 
 //process player input
 const processInput = (roomId, socketId, input)=>{
@@ -166,6 +174,8 @@ const applyMovement = (player, direction, deltaTime)=>{
     if(direction !== 0){
         player.facing = direction;
     }
+
+    player.currentDirection = direction;
     
     //apply horizontal velocity
     player.velocity.x = direction * player.speed;
@@ -202,6 +212,7 @@ const applyGravity = (player, deltaTime)=>{
     }
 };
 
+
 //process ability
 const executeAbility = (gameState, player, abilityType)=>{
     //check if ability is on cooldown
@@ -225,7 +236,7 @@ const executeAbility = (gameState, player, abilityType)=>{
     player.cooldowns[abilityType] = ability.cooldown;
     
     //find other players in range
-    const targets = gameState.players.filter((p) => p.socketId !== player.socketId && !p.isDead && Math.abs(p.position.x - player.position.x) <= ability.range);
+    const targets = gameState.players.filter((p) => p.socketId !== player.socketId && !p.isDead && Math.abs(p.position.x - player.position.x) <= ability.range && Math.abs(p.position.y - player.position.y) <= ability.range);
     
     //apply damage and knockback to players
     const hits = targets.map(target=>{
@@ -235,7 +246,7 @@ const executeAbility = (gameState, player, abilityType)=>{
         const knockbackDir = target.position.x > player.position.x ? 1 : -1;
         target.velocity.x = knockbackDir * ability.knockback;
         
-        //check id player died
+        //check if player died
         if(target.health <= 0){
             target.health = 0;
             target.isDead = true;
@@ -324,6 +335,12 @@ const gameTick = (roomId, io)=>{
                         player.isBlocking = false;
                     }, 500);
                     break;
+            }
+        }
+        else {
+            //continue applying movement based on last direction even with empty buffer
+            if(player.currentDirection !== 0){
+                applyMovement(player, player.currentDirection, deltaTime);
             }
         }
         
@@ -425,6 +442,7 @@ const getClientGameState = (gameState)=>{
             socketId: p.socketId,
             playerIndex: p.playerIndex,
             character: p.character,
+            size: p.size,
             position: p.position,
             velocity: p.velocity,
             facing: p.facing,

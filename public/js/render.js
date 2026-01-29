@@ -56,7 +56,7 @@ const initializeRender = ()=>{
     
     const drawPlayer = (player)=>{
         ctx.fillStyle = player.socketId === socket.id ? "blue" : "red";
-        ctx.fillRect(player.position.x - 25, player.position.y - 50, 50, 50);
+        ctx.fillRect(player.position.x - player.size.width/2, player.position.y - player.size.height, player.size.width, player.size.height);
         
         //facing indicator
         ctx.fillStyle = "yellow";
