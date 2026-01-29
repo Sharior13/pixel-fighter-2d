@@ -12,9 +12,22 @@ window.addEventListener('resize', ()=>{
 
 let isRendering = false;
 let currentGameState = null;
+let animationFrameId = null;
 
 const updateGameState = (state)=>{
     currentGameState = state;
+};
+
+const stopRender = ()=>{
+    if(animationFrameId){
+        cancelAnimationFrame(animationFrameId);
+        animationFrameId = null;
+    }
+    isRendering = false;
+    currentGameState = null;
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    console.log("Render stopped");
 };
 
 const initializeRender = ()=>{
@@ -89,7 +102,10 @@ const initializeRender = ()=>{
     };
     
     const animate = () => {
-        requestAnimationFrame(animate);
+        if(!isRendering){
+            return;
+        }
+        animationFrameId = requestAnimationFrame(animate);
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         drawGridLines();
@@ -119,4 +135,4 @@ const initializeRender = ()=>{
     animate();
 };
 
-export { initializeRender, updateGameState, canvas };
+export { initializeRender, stopRender, updateGameState, canvas };

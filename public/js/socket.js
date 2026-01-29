@@ -1,7 +1,7 @@
 import { openCharacterSelect, showOpponentPreview } from "./characterSelect.js";
 import { keys, actionTriggered } from "./input.js";
 import { titleScreen } from "./main.js";
-import { initializeRender, updateGameState } from "./render.js";
+import { initializeRender, stopRender, updateGameState } from "./render.js";
 
 let socket = null;
 let inMatch = false;
@@ -35,7 +35,6 @@ const initializeSocket = (mode, roomId)=>{
         openCharacterSelect();
     });
 
-    
     socket.on("characterPreview", ({ socketId, characterId })=>{
         if(socketId === socket.id){
           return;
@@ -75,15 +74,15 @@ const initializeSocket = (mode, roomId)=>{
     socket.on("matchEnd", ({ winner, finalStats, reason })=>{
         console.log("Match ended! Winner:", winner);
         cleanupSocket();
+        stopRender();
         titleScreen();
-        return;
     });
 
     socket.on("matchError", ({errMsg})=>{
         console.log("Match error: ", errMsg);
         cleanupSocket();
+        stopRender();
         titleScreen();
-        return;
     })
 
     //send input to backend
@@ -102,10 +101,9 @@ const processInputs = ()=>{
     if(keys.a || keys.ArrowLeft) direction = -1;
     if(keys.d || keys.ArrowRight) direction = 1;
     
-    if(direction !== lastSentDirection) {
-        inputs.push({ type: "move", direction });
-        lastSentDirection = direction;
-    }
+    //send movement input continuously
+    inputs.push({ type: "move", direction });
+    lastSentDirection = direction;
     
     //jump
     if((keys.w || keys.ArrowUp) && !actionTriggered.jump) {
@@ -148,6 +146,7 @@ const cleanupSocket = ()=>{
     }
 
     lastSentDirection = 0;
+    inMatch = false;
     
     if(socket){
         socket.off();
