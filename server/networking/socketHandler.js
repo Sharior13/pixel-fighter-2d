@@ -89,19 +89,25 @@ const socketHandler = (io)=>{
         });
 
         //handle player input during fight
-        socket.on("playerInput", (input)=>{
+        socket.on("playerInput", (inputs)=>{
             const match = getMatchBySocket(socket);
             
             if(!match || match.phase !== "FIGHT"){
                 return;
             }
+
+            if(!Array.isArray(inputs)){
+                console.warn("Invalid input batch");
+                return;
+            }
             
             //process input through server-side game state
-            const result = processInput(match.roomId, socket.id, input);
-            
-            if(!result){
-                console.warn("failed to process input for:", socket.id);
-            }
+            inputs.forEach(input=>{
+                const result = processInput(match.roomId, socket.id, input);
+                if(!result){
+                    console.warn("failed to process input for:", socket.id);
+                }
+            });           
         });
 
         //remove players on disconnect

@@ -1,4 +1,5 @@
 const { matches, createMatch, startCharacterSelectTimeout } = require("./matchManager.js");
+const { initializeGameState, startGameLoop } = require("./gameState.js");
 
 const ROOM_ID_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 const QUEUE_SIZE = 2;
@@ -64,7 +65,30 @@ const tryMatch = ()=>{
 
     // start the character selection timeout
     startCharacterSelectTimeout(match, (fightData) => {
-        ioInstance.to(fightData.roomId).emit("startMatch", fightData);
+        try{
+            const gameState = initializeGameState(fightData.roomId, fightData.players);
+            ioInstance.to(fightData.roomId).emit("startMatch", {
+                roomId: fightData.roomId,
+                players: fightData.players,
+                gameState: {
+                    players: gameState.players.map(p => ({
+                        socketId: p.socketId,
+                        playerIndex: p.playerIndex,
+                        character: p.character,
+                        position: p.position,
+                        health: p.health,
+                        maxHealth: p.maxHealth
+                    }))
+                }
+            });
+
+            startGameLoop(fightData.roomId, ioInstance);
+            console.log("[matchmaking] Timeout: Match started successfully");
+        } catch(error){
+                ioInstance.to(fightData.roomId).emit("matchError", {
+                message: "Failed to start match"
+            });
+        }
     });
 
     return match;

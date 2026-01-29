@@ -6,7 +6,7 @@ const gameLoopIntervals = new Map();
 const GAME_CONFIG = {
     tickRate: 60,
     tickInterval: 1000 / 60,
-    charSelectTimeout: 30000,
+    charSelectTimeout: 10000,
     matchDuration: 180000,
     gravity: 0.5,
     groundY: 400,

@@ -1,6 +1,7 @@
 import { initializeRender, canvas } from "./render.js";
 import { initializeSocket } from "./socket.js";
 import "./characterSelect.js";
+import "./input.js";
 
 const titleDiv = document.getElementById('title-screen');
 // const titleForm = document.getElementById('title-form');
