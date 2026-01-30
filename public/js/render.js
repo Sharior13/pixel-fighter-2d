@@ -14,8 +14,22 @@ let isRendering = false;
 let currentGameState = null;
 let animationFrameId = null;
 
+const camera = {
+    x: 0,
+    y: 0
+};
+
 const updateGameState = (state)=>{
     currentGameState = state;
+};
+
+//update current player's viewport
+const updateCamera = (player)=>{
+    camera.x = player.position.x - canvas.width / 2;
+    camera.y = player.position.y - canvas.height / 2;
+
+    camera.x = Math.max(0, Math.min(camera.x, 2000 - canvas.width));
+    camera.y = Math.max(0, Math.min(camera.y, 600 - canvas.height));
 };
 
 const stopRender = ()=>{
@@ -65,10 +79,10 @@ const initializeRender = ()=>{
     };
     
     const drawHealthBar = (player)=>{
-        const barWidth = 50;
+        const barWidth = player.size.width;
         const barHeight = 5;
         const x = player.position.x - barWidth / 2;
-        const y = player.position.y - 65;
+        const y = player.position.y - player.size.height - 10;
         
         //background
         ctx.fillStyle = "red";
@@ -78,6 +92,11 @@ const initializeRender = ()=>{
         const healthWidth = (player.health / player.maxHealth) * barWidth;
         ctx.fillStyle = "green";
         ctx.fillRect(x, y, healthWidth, barHeight);
+
+        //border
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, barWidth, barHeight);
     };
     
     const drawCooldowns = (player) => {
@@ -114,6 +133,15 @@ const initializeRender = ()=>{
             return;
         }
 
+        const localPlayer = currentGameState.players.find(p => p.socketId === socket.id);
+        if(localPlayer){
+            updateCamera(localPlayer);
+        }
+
+        //apply camera transform
+        ctx.save();
+        ctx.translate(-camera.x, -camera.y);
+
         //render players
         currentGameState.players.forEach(player=>{
             //draw player sprite
@@ -121,16 +149,18 @@ const initializeRender = ()=>{
             
             //draw health bar
             drawHealthBar(player);
-            
+        });
+        ctx.restore();
+        currentGameState.players.forEach(player=>{
             //draw cooldown indicators
             drawCooldowns(player);
         });
         
         //draw time remaining
         const timeLeft = Math.ceil(currentGameState.timeRemaining / 1000);
-        ctx.fillStyle = "white";
+        ctx.fillStyle = "black";
         ctx.font = "24px Arial";
-        ctx.fillText(`Time: ${timeLeft}s`, canvas.width / 2, 30);
+        ctx.fillText(`Time: ${timeLeft}s`, canvas.width / 2 - 50, 30, 100);
     };
     animate();
 };

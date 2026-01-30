@@ -10,8 +10,8 @@ const GAME_CONFIG = {
     matchDuration: 180000,
     gravity: 0.5,
     groundY: 400,
-    stageWidth: 800,
-    inputBufferSize: 3
+    stageWidth: 2000,
+    inputBufferSize: 10
 };
 
 
@@ -184,7 +184,7 @@ const applyMovement = (player, direction, deltaTime)=>{
     player.position.x += player.velocity.x;
     
     //ensure player stays within map boundary
-    player.position.x = Math.max(50, Math.min(GAME_CONFIG.stageWidth - 50, player.position.x));
+    player.position.x = Math.max(player.size.width, Math.min(GAME_CONFIG.stageWidth - player.size.width, player.position.x));
 };
 
 
@@ -306,14 +306,30 @@ const gameTick = (roomId, io)=>{
         //update cooldowns
         updateCooldowns(player, deltaTime);
         
-        //process buffered inputs
-        if(player.inputBuffer.length > 0){
+        //process all buffered inputs
+        let latestMovement = null;
+        const otherInputs = [];
+
+        //empty the entire buffer
+        while(player.inputBuffer.length > 0){
             const input = player.inputBuffer.shift();
-            
+
+            if(input.type === 'move'){
+                latestMovement = input;
+            } else {
+                otherInputs.push(input);
+            }
+        }
+
+        //apply latest movement
+        if(latestMovement){
+            applyMovement(player, latestMovement.direction, deltaTime);
+            player.currentDirection = latestMovement.direction;
+        }
+
+        //process all other inputs
+        otherInputs.forEach(input => {
             switch (input.type) {
-                case 'move':
-                    applyMovement(player, input.direction, deltaTime);
-                    break;
                 case 'jump':
                     applyJump(player);
                     break;
@@ -336,12 +352,11 @@ const gameTick = (roomId, io)=>{
                     }, 500);
                     break;
             }
-        }
-        else {
-            //continue applying movement based on last direction even with empty buffer
-            if(player.currentDirection !== 0){
-                applyMovement(player, player.currentDirection, deltaTime);
-            }
+        });
+
+        //if no movement input continue with last direction
+        if(!latestMovement && player.currentDirection !== 0){
+            applyMovement(player, player.currentDirection, deltaTime);
         }
         
         applyGravity(player, deltaTime);
