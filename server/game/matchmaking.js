@@ -66,7 +66,7 @@ const tryMatch = ()=>{
     // start the character selection timeout
     startCharacterSelectTimeout(match, (fightData) => {
         try{
-            const gameState = initializeGameState(fightData.roomId, fightData.players);
+            const gameState = initializeGameState(fightData.roomId, fightData.players, fightData.mapId);
             ioInstance.to(fightData.roomId).emit("startMatch", {
                 roomId: fightData.roomId,
                 players: fightData.players,

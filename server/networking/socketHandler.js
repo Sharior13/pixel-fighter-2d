@@ -60,7 +60,7 @@ const socketHandler = (io)=>{
                 
                 //initialize server-authoritative game state
                 try{
-                    const gameState = initializeGameState(fightData.roomId, fightData.players);
+                    const gameState = initializeGameState(fightData.roomId, fightData.players, fightData.mapId);
                     
                     //emit startMatch with initial game state
                     io.to(fightData.roomId).emit("startMatch", {
