@@ -1,4 +1,5 @@
 const { getCharacterData } = require('./characterData.js');
+const { getMapData } = require('./maps.js');
 
 const gameStates = new Map();
 const gameLoopIntervals = new Map();
@@ -9,18 +10,20 @@ const GAME_CONFIG = {
     charSelectTimeout: 100,
     matchDuration: 180000,
     gravity: 0.5,
-    groundY: 400,
-    stageWidth: 2000,
     inputBufferSize: 10
 };
 
 
 //initialize game state when match starts
-const initializeGameState = (roomId, playerData)=>{
+const initializeGameState = (roomId, playerData, mapId)=>{
     if(gameStates.has(roomId)){
         console.warn(`[GameState] Game state already exists for room ${roomId}`);
         return gameStates.get(roomId);
     }
+
+    //load map
+    const mapData = getMapData(mapId);
+    console.log(`[GameState] Initializing game with map: ${mapData.name}`);
 
     const gameState = {
         roomId,
@@ -29,6 +32,18 @@ const initializeGameState = (roomId, playerData)=>{
         lastUpdateTime: Date.now(),
         tickCount: 0,
         
+        //map configs
+        map: {
+            id: mapData.id,
+            name: mapData.name,
+            width: mapData.width,
+            height: mapData.height,
+            groundY: mapData.groundY,
+            backgroundColor: mapData.backgroundColor,
+            platforms: mapData.platforms,
+            boundaries: mapData.boundaries
+        },
+
         players: playerData.map((p, index)=>{
             const charData = getCharacterData(p.character);
             
@@ -36,6 +51,11 @@ const initializeGameState = (roomId, playerData)=>{
                 console.error(`[GameState] Invalid character: ${p.character}`);
                 throw new Error(`Invalid character: ${p.character}`);
             }
+
+            const spawnPoint = mapData.spawnPoints[index] || { 
+                x: index === 0 ? 200 : mapData.width - 200, 
+                y: mapData.groundY 
+            };
 
             return {
                 socketId: p.socketId,
@@ -49,8 +69,8 @@ const initializeGameState = (roomId, playerData)=>{
 
                 //position and movement
                 position: {
-                    x: index === 0 ? 200 : 600,
-                    y: GAME_CONFIG.groundY
+                    x: spawnPoint.x,
+                    y: spawnPoint.y
                 },
                 velocity: {
                     x: 0,
@@ -60,7 +80,7 @@ const initializeGameState = (roomId, playerData)=>{
                 currentDirection: 0,
                 
                 //flags
-                isGrounded: true,
+                isGrounded: false,
                 isJumping: false,
                 isAttacking: false,
                 isBlocking: false,
@@ -165,7 +185,7 @@ const processInput = (roomId, socketId, input)=>{
 };
 
 //apply to player movement
-const applyMovement = (player, direction, deltaTime)=>{
+const applyMovement = (player, direction, deltaTime, mapBoundaries)=>{
     if(player.isStunned || player.isAttacking){
         return;
     }
@@ -184,7 +204,9 @@ const applyMovement = (player, direction, deltaTime)=>{
     player.position.x += player.velocity.x;
     
     //ensure player stays within map boundary
-    player.position.x = Math.max(player.size.width, Math.min(GAME_CONFIG.stageWidth - player.size.width, player.position.x));
+    const leftBound = mapBoundaries.left + player.size.width / 2;
+    const rightBound = mapBoundaries.right - player.size.width / 2;
+    player.position.x = Math.max(leftBound, Math.min(rightBound, player.position.x));
 };
 
 
@@ -197,14 +219,14 @@ const applyJump = (player)=>{
 };
 
 
-const applyGravity = (player, deltaTime)=>{
+const applyGravity = (player, deltaTime, groundY)=>{
     if(!player.isGrounded){
         player.velocity.y += GAME_CONFIG.gravity;
         player.position.y += player.velocity.y;
         
         //check if landd
-        if(player.position.y >= GAME_CONFIG.groundY){
-            player.position.y = GAME_CONFIG.groundY;
+        if(player.position.y >= groundY){
+            player.position.y = groundY;
             player.velocity.y = 0;
             player.isGrounded = true;
             player.isJumping = false;
@@ -323,7 +345,7 @@ const gameTick = (roomId, io)=>{
 
         //apply latest movement
         if(latestMovement){
-            applyMovement(player, latestMovement.direction, deltaTime);
+            applyMovement(player, latestMovement.direction, deltaTime, gameState.map.boundaries);
             player.currentDirection = latestMovement.direction;
         }
 
@@ -356,10 +378,10 @@ const gameTick = (roomId, io)=>{
 
         //if no movement input continue with last direction
         if(!latestMovement && player.currentDirection !== 0){
-            applyMovement(player, player.currentDirection, deltaTime);
+            applyMovement(player, player.currentDirection, deltaTime, gameState.map.boundaries);
         }
         
-        applyGravity(player, deltaTime);
+        applyGravity(player, deltaTime, gameState.map.groundY);
         
         //reset combo on no recent input
         if(currentTime - player.lastInputTime > 2000){
@@ -453,6 +475,7 @@ const getClientGameState = (gameState)=>{
         phase: gameState.phase,
         tickCount: gameState.tickCount,
         timeRemaining: GAME_CONFIG.matchDuration - (Date.now() - gameState.startTime),
+        map: gameState.map,
         players: gameState.players.map(p => ({
             socketId: p.socketId,
             playerIndex: p.playerIndex,

@@ -1,14 +1,17 @@
 const { GAME_CONFIG } = require('./gameState.js')
 const { validateCharacter, getRandomCharacter } = require('./characterData.js');
+const { getRandomMap } = require('./maps.js');
 
 const matches = new Map();
 const lockTimeouts = new Map();
 
 //create a new match
 const createMatch = (roomId, sockets)=>{
+    const selectedMap = getRandomMap();
     const match = {
         roomId,
         phase: "CHARACTER_SELECT",
+        mapId: selectedMap.id,
         players: sockets.map((socket, index) => ({
             socketId: socket.id,
             socket,
@@ -120,6 +123,7 @@ const startFight = (match)=>{
 
     return {
         roomId: match.roomId,
+        mapId: match.mapId,
         players: match.players.map(p => ({
             socketId: p.socketId,
             playerIndex: p.playerIndex,

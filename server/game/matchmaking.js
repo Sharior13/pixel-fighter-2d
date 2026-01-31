@@ -70,6 +70,7 @@ const tryMatch = ()=>{
             ioInstance.to(fightData.roomId).emit("startMatch", {
                 roomId: fightData.roomId,
                 players: fightData.players,
+                map: gameState.map,
                 gameState: {
                     players: gameState.players.map(p => ({
                         socketId: p.socketId,
