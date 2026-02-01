@@ -14,10 +14,7 @@ let isRendering = false;
 let currentGameState = null;
 let animationFrameId = null;
 let currentMap = null;
-//hidden elements for background
 let bgImg = null;
-let bgCanvas = null;
-let bgCtx = null;
 
 const camera = {
     x: 0,
@@ -32,29 +29,27 @@ const setMap = (mapData)=>{
             bgImg = null;
         }
 
-        //hidden <img> element
+        //create a visible <img> that sits behind the canvas
         bgImg = document.createElement('img');
+        bgImg.id = 'bgImage';
         bgImg.style.position = 'absolute';
-        bgImg.style.left = '-9999px';
+        bgImg.style.top = '0px';
+        bgImg.style.left = '0px';
+        bgImg.style.width = currentMap.width + 'px';
+        bgImg.style.height = currentMap.height + 'px';
+        bgImg.style.zIndex = '-2';
         bgImg.style.pointerEvents = 'none';
-        document.body.appendChild(bgImg);
-
-        //offscreen canvas
-        bgCanvas = document.createElement('canvas');
-        bgCanvas.width = currentMap.width;
-        bgCanvas.height = currentMap.height;
-        bgCtx = bgCanvas.getContext('2d');
+        bgImg.style.imageRendering = 'pixelated';
 
         bgImg.onload = ()=>{
-            bgCanvas.width = bgImg.naturalWidth;
-            bgCanvas.height = bgImg.naturalHeight;
             console.log(`[Render] Background image loaded for: ${currentMap.name}`);
         };
         bgImg.onerror = ()=>{
             console.warn(`[Render] Background image not found for: ${currentMap.id}, using solid color`);
             bgImg = null;
         };
-
+        //nsiert before the canvas so it renders behind it
+        canvas.parentElement.insertBefore(bgImg, canvas);
         bgImg.src = `../assets/${currentMap.id}.gif`;
     }
 };
@@ -77,8 +72,6 @@ const stopRender = ()=>{
         bgImg.remove();
         bgImg = null;
     }
-    bgCanvas = null;
-    bgCtx = null;
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     console.log("Render stopped");
@@ -92,14 +85,14 @@ const initializeRender = ()=>{
     console.log("render: ",isRendering);
     
     const drawBackground = ()=>{
-        if(currentMap && bgImg && bgCanvas){
-            bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
-            bgCtx.drawImage(bgImg, 0, 0);
-            ctx.drawImage(bgCanvas, 0, 0, bgCanvas.width, bgCanvas.height, 0, 0, currentMap.width, currentMap.height);
-        } 
-        else {
-            ctx.fillStyle = (currentMap && currentMap.backgroundColor) || "#1a1a2e";
-            ctx.fillRect(0, 0, currentMap ? currentMap.width : canvas.width, currentMap ? currentMap.height : canvas.height);
+        if(currentMap && bgImg){
+            //move the <img> element opposite to camera so it scrolls with the world
+            bgImg.style.left = (-camera.x) + 'px';
+            bgImg.style.top = (-camera.y) + 'px';
+        } else if(currentMap){
+            //fill with solid color if no image
+            ctx.fillStyle = currentMap.backgroundColor || "#1a1a2e";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
     };
     
@@ -183,6 +176,10 @@ const initializeRender = ()=>{
         //clamp to map boundary
         camera.x = Math.max(0, Math.min(camera.x, currentMap.width - canvas.width));
         camera.y = Math.max(0, Math.min(camera.y, currentMap.height - canvas.height));
+
+        //reduce camera blur
+        camera.x = Math.round(camera.x);
+        camera.y = Math.round(camera.y);
     };
     
     const drawGridLines = ()=>{
@@ -365,13 +362,13 @@ const initializeRender = ()=>{
 
         updateCamera();
 
+        drawBackground();
         
         
         //apply camera transform
         ctx.save();
         ctx.translate(-camera.x, -camera.y);
         
-        drawBackground();
         drawGround();
 
         //render players
@@ -391,7 +388,7 @@ const initializeRender = ()=>{
         drawHUD();
 
         //for debug
-        // drawGridLines();
+        drawGridLines();
         drawMapBoundaries();
     };
     animate();
