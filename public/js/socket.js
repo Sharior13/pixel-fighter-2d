@@ -1,7 +1,7 @@
 import { openCharacterSelect, showOpponentPreview } from "./characterSelect.js";
 import { keys, actionTriggered } from "./input.js";
 import { titleScreen } from "./main.js";
-import { initializeRender, stopRender, updateGameState } from "./render.js";
+import { initializeRender, stopRender, setMap, updateGameState } from "./render.js";
 
 let socket = null;
 let inMatch = false;
@@ -32,6 +32,7 @@ const initializeSocket = (mode, roomId)=>{
         inMatch = true;
         console.log("Match found!", roomId);
         document.getElementById("queuing").classList.add("hidden");
+        canvas.style.backgroundImage = 'none';
         openCharacterSelect();
     });
 
@@ -52,9 +53,10 @@ const initializeSocket = (mode, roomId)=>{
           "Opponent locked in!";
     });
 
-    socket.on("startMatch", ()=>{
+    socket.on("startMatch", (gameState)=>{
         document.getElementById("character-select").classList.add("hidden");
         
+        setMap(gameState.map);
         initializeRender();
     });
 

@@ -10,6 +10,7 @@ body{
     justify-content: center;
     align-items: center;
     overflow: hidden;
+    user-select: none;
 }
 
 #canvas{
@@ -37,7 +38,6 @@ body{
     gap: 32px;
     overflow: visible;
     margin-bottom: 50px;
-    user-select: none;
 }
 .title-box{
     width: 100%;
@@ -93,6 +93,11 @@ body{
     width: 160px;
     padding: 16px 0;
     font-size: 24px;
+}
+
+/* queuing */
+#queuing{
+    color: white;
 }
 
 /* character select ui */

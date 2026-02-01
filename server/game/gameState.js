@@ -53,7 +53,7 @@ const initializeGameState = (roomId, playerData, mapId)=>{
             }
 
             const spawnPoint = mapData.spawnPoints[index] || { 
-                x: index === 0 ? 200 : mapData.width - 200, 
+                x: index === 0 ? 400 : mapData.width - 400, 
                 y: mapData.groundY 
             };
 
@@ -63,8 +63,8 @@ const initializeGameState = (roomId, playerData, mapId)=>{
                 character: p.character,
 
                 size: {
-                    width: 75,
-                    height: 150
+                    width: 125,
+                    height: 200
                 },
 
                 //position and movement

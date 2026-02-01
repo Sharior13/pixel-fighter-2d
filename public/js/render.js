@@ -14,18 +14,53 @@ let isRendering = false;
 let currentGameState = null;
 let animationFrameId = null;
 let currentMap = null;
+//hidden elements for background
+let bgImg = null;
+let bgCanvas = null;
+let bgCtx = null;
 
 const camera = {
     x: 0,
     y: 0
 };
 
+const setMap = (mapData)=>{
+    currentMap = mapData;
+    if(currentMap){
+        if(bgImg){
+            bgImg.remove();
+            bgImg = null;
+        }
+
+        //hidden <img> element
+        bgImg = document.createElement('img');
+        bgImg.style.position = 'absolute';
+        bgImg.style.left = '-9999px';
+        bgImg.style.pointerEvents = 'none';
+        document.body.appendChild(bgImg);
+
+        //offscreen canvas
+        bgCanvas = document.createElement('canvas');
+        bgCanvas.width = currentMap.width;
+        bgCanvas.height = currentMap.height;
+        bgCtx = bgCanvas.getContext('2d');
+
+        bgImg.onload = ()=>{
+            bgCanvas.width = bgImg.naturalWidth;
+            bgCanvas.height = bgImg.naturalHeight;
+            console.log(`[Render] Background image loaded for: ${currentMap.name}`);
+        };
+        bgImg.onerror = ()=>{
+            console.warn(`[Render] Background image not found for: ${currentMap.id}, using solid color`);
+            bgImg = null;
+        };
+
+        bgImg.src = `../assets/${currentMap.id}.gif`;
+    }
+};
+
 const updateGameState = (state)=>{
     currentGameState = state;
-
-    if(state.map && !currentMap){
-        currentMap = state.map;
-    }
 };
 
 
@@ -37,6 +72,13 @@ const stopRender = ()=>{
     isRendering = false;
     currentGameState = null;
     currentMap = null;
+
+    if(bgImg){
+        bgImg.remove();
+        bgImg = null;
+    }
+    bgCanvas = null;
+    bgCtx = null;
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     console.log("Render stopped");
@@ -50,12 +92,15 @@ const initializeRender = ()=>{
     console.log("render: ",isRendering);
     
     const drawBackground = ()=>{
-        if(currentMap){
-            ctx.fillStyle = currentMap.backgroundColor || "#1a1a2e";
-        } else {
-            ctx.fillStyle = "#1a1a2e";
+        if(currentMap && bgImg && bgCanvas){
+            bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+            bgCtx.drawImage(bgImg, 0, 0);
+            ctx.drawImage(bgCanvas, 0, 0, bgCanvas.width, bgCanvas.height, 0, 0, currentMap.width, currentMap.height);
+        } 
+        else {
+            ctx.fillStyle = (currentMap && currentMap.backgroundColor) || "#1a1a2e";
+            ctx.fillRect(0, 0, currentMap ? currentMap.width : canvas.width, currentMap ? currentMap.height : canvas.height);
         }
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
     };
     
     const drawGround = ()=>{
@@ -67,14 +112,13 @@ const initializeRender = ()=>{
         ctx.strokeStyle = "#4a4a4a";
         ctx.lineWidth = 3;
         ctx.beginPath();
-        const groundScreenY = currentMap.groundY - camera.y;
-        ctx.moveTo(0, groundScreenY);
-        ctx.lineTo(canvas.width, groundScreenY);
+        ctx.moveTo(currentMap.boundaries.left, currentMap.groundY);
+        ctx.lineTo(currentMap.boundaries.right, currentMap.groundY);
         ctx.stroke();
         
         //draw ground fill
         ctx.fillStyle = "rgba(74, 74, 74, 0.3)";
-        ctx.fillRect(0, groundScreenY, canvas.width, canvas.height - groundScreenY);
+        ctx.fillRect(currentMap.boundaries.left, currentMap.groundY, currentMap.width, currentMap.height - currentMap.groundY);
     };
     
     const drawMapBoundaries = ()=>{
@@ -104,10 +148,39 @@ const initializeRender = ()=>{
     };
 
     //update current player's viewport
-    const updateCamera = (player)=>{
-        camera.x = player.position.x - canvas.width / 2;
-        camera.y = player.position.y - canvas.height / 2;
-    
+    const updateCamera = ()=>{
+        
+        const localPlayer = currentGameState.players.find(p => p.socketId === socket.id);
+        const opponent = currentGameState.players.find(p => p.socketId !== socket.id);
+
+        if(!localPlayer || !opponent){
+            return;
+        }
+
+        //check if opponent is within viewport
+        const opponentVisible = (
+            opponent.position.x >= camera.x && 
+            opponent.position.x <= camera.x + canvas.width && 
+            opponent.position.y >= camera.y && 
+            opponent.position.y <= camera.y + canvas.height
+        );
+
+        let targetX, targetY;
+        if(opponentVisible){
+            //center on midpoint if both visible
+            targetX = (localPlayer.position.x + opponent.position.x) / 2 - canvas.width / 2;
+            targetY = (localPlayer.position.y + opponent.position.y) / 2 - canvas.height / 2;
+        } else {
+            //follow local player if no opponent
+            targetX = localPlayer.position.x - canvas.width / 2;
+            targetY = localPlayer.position.y - canvas.height / 2;
+        }
+
+        //smooth follow
+        camera.x += (targetX - camera.x) * 0.1;
+        camera.y += (targetY - camera.y) * 0.1;
+
+        //clamp to map boundary
         camera.x = Math.max(0, Math.min(camera.x, currentMap.width - canvas.width));
         camera.y = Math.max(0, Math.min(camera.y, currentMap.height - canvas.height));
     };
@@ -289,22 +362,17 @@ const initializeRender = ()=>{
         if(!currentGameState || !currentGameState.players){
             return;
         }
+
+        updateCamera();
+
         
-        const localPlayer = currentGameState.players.find(p => p.socketId === socket.id);
-        if(localPlayer){
-            updateCamera(localPlayer);
-        }
-
-        //for debug
-        drawGridLines();
-        drawMapBoundaries();
-
-        drawBackground();
-        drawGround();
-
+        
         //apply camera transform
         ctx.save();
         ctx.translate(-camera.x, -camera.y);
+        
+        drawBackground();
+        drawGround();
 
         //render players
         currentGameState.players.forEach(player=>{
@@ -319,10 +387,14 @@ const initializeRender = ()=>{
             //draw cooldown indicators
             drawCooldowns(player);
         });
-
+        
         drawHUD();
+
+        //for debug
+        // drawGridLines();
+        drawMapBoundaries();
     };
     animate();
 };
 
-export { initializeRender, stopRender, updateGameState, canvas };
+export { initializeRender, stopRender, setMap, updateGameState, canvas };

@@ -44,7 +44,6 @@ const startGame = (mode, roomId)=>{
 };
 
 const hideTitleScreen = ()=>{
-    canvas.style.backgroundImage = 'none';
     titleDiv.style.display = 'none';
 };
 
