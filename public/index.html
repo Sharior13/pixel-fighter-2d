@@ -28,12 +28,53 @@
     <div id="queuing"></div>
 
     <!-- character selection ui -->
-    <div id="character-select" class="hidden">
-        <h2>Select Your Fighter</h2>    
-        <div id="character-grid"></div> 
-        <div class="actions">
-          <button id="lockBtn" disabled>Lock In</button>
-          <p id="statusText"></p>
+
+    <div id="character-select" class="character-container hidden">
+        <!-- Main Selection Area -->
+        <div class="selection-wrapper">
+            <!-- Player 1 Platform -->
+            <div class="player-platform">
+                <div class="platform-stage">
+                    <div class="platform-base"></div>
+                    <div class="platform-glow"></div>
+                    <div class="character-preview animate" id="player1-preview">
+                        <span class="silhouette">❓</span>
+                    </div>
+                </div>
+                <div class="platform-label active" id="p1-label">PLAYER 1</div>
+            </div>
+
+            <!-- Character Selection Grid -->
+            <div class="character-selection">
+                <div class="selection-title">CHOOSE PLAYER WARRIOR</div>
+                <div class="character-grid" id="character-grid">
+                    <!-- Characters will be populated by JavaScript -->
+                </div><br>
+                <p id="statusText"></p>
+                <div class="stage-selection hidden" id="stage-selection">
+                    <!-- Stages will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Player 2 Platform -->
+            <div class="player-platform">
+                <div class="platform-stage">
+                    <div class="platform-base"></div>
+                    <div class="platform-glow"></div>
+                    <div class="character-preview animate" id="player2-preview">
+                        <span class="silhouette">❓</span>
+                    </div>
+                </div>
+                <div class="platform-label" id="p2-label">PLAYER 2</div>
+            </div>
+        </div>
+
+        <!-- VS Text -->
+        <div class="vs-text">VS</div>
+
+        <!-- Next Button -->
+        <div class="action-button-container">
+            <button class="lock-in-button" id="lockBtn" disabled>LOCK IN</button>
         </div>
     </div>
 

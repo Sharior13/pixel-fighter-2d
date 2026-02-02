@@ -125,7 +125,11 @@ const socketHandler = (io)=>{
             io.to(match.roomId).emit("playerDisconnected", socket.id);
 
             if(match.phase === "CHARACTER_SELECT"){
+                deleteGameState(match.roomId);
                 deleteMatch(match.roomId);
+                io.to(match.roomId).emit("matchError", {
+                    reason: "opponent_disconnected"
+                });
             } 
             else if(match.phase === "FIGHT"){
                 //end the game if a player disconnects during fight

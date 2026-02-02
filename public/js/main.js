@@ -48,7 +48,7 @@ const hideTitleScreen = ()=>{
 };
 
 const showTitleScreen = ()=>{
-    canvas.style.backgroundImage = "url('./assets/title-bg.gif')";
+    canvas.style.backgroundImage = "url('./assets/background/title-bg.gif')";
     titleDiv.style.display = "flex";
 };
 

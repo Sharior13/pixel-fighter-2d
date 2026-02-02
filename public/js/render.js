@@ -48,9 +48,9 @@ const setMap = (mapData)=>{
             console.warn(`[Render] Background image not found for: ${currentMap.id}, using solid color`);
             bgImg = null;
         };
-        //nsiert before the canvas so it renders behind it
+        //insert before the canvas so it renders behind it
         canvas.parentElement.insertBefore(bgImg, canvas);
-        bgImg.src = `../assets/${currentMap.id}.gif`;
+        bgImg.src = `../assets/background/${currentMap.id}.gif`;
     }
 };
 
@@ -364,13 +364,10 @@ const initializeRender = ()=>{
 
         drawBackground();
         
-        
         //apply camera transform
         ctx.save();
         ctx.translate(-camera.x, -camera.y);
         
-        drawGround();
-
         //render players
         currentGameState.players.forEach(player=>{
             //draw player sprite
@@ -386,10 +383,11 @@ const initializeRender = ()=>{
         });
         
         drawHUD();
-
+        
         //for debug
-        drawGridLines();
-        drawMapBoundaries();
+        // drawGround();
+        // drawGridLines();
+        // drawMapBoundaries();
     };
     animate();
 };

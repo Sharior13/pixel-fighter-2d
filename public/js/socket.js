@@ -32,7 +32,6 @@ const initializeSocket = (mode, roomId)=>{
         inMatch = true;
         console.log("Match found!", roomId);
         document.getElementById("queuing").classList.add("hidden");
-        canvas.style.backgroundImage = 'none';
         openCharacterSelect();
     });
 
@@ -49,12 +48,13 @@ const initializeSocket = (mode, roomId)=>{
           return;
         }
 
-        document.getElementById("statusText").textContent =
-          "Opponent locked in!";
+        document.getElementById("statusText").textContent = "Opponent locked in!";
+        document.getElementById('p2-label').classList.add('active');
     });
 
     socket.on("startMatch", (gameState)=>{
-        document.getElementById("character-select").classList.add("hidden");
+        document.getElementById("character-select").style.display = "none"; 
+        canvas.style.backgroundImage = 'none';
         
         setMap(gameState.map);
         initializeRender();
@@ -82,6 +82,7 @@ const initializeSocket = (mode, roomId)=>{
 
     socket.on("matchError", ({errMsg})=>{
         console.log("Match error: ", errMsg);
+        document.getElementById("character-select").style.display = "none"; 
         cleanupSocket();
         stopRender();
         titleScreen();
