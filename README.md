@@ -46,18 +46,19 @@ http://localhost:3000
 
 ```
 project-root/
-├── server.js                          # Express server & Socket.io initialization
-├── index.html                         # Main HTML entry point
-├── style.css                          # Global styles
 ├── public/
-│   └── js/
+│   └──assets/                         # Essential game files
+│   └── index.html                     # Main HTML entry point
+│   └── style.css                      # Global styles
+│   └── js/                            # Essential java files
 │       ├── main.js                    # Client entry, title screen logic
 │       ├── socket.js                  # Client-side socket & input handling
 │       ├── render.js                  # Game rendering & animation loop
 │       ├── input.js                   # Keyboard input tracking
 │       └── characterSelect.js         # Character selection UI
 └── server/
-    ├── networking/
+    └── server.js                          # Express server & Socket.io initialization
+    └── networking/
     │   └── socketHandler.js           # Server socket event handlers
     └── game/
         ├── matchMaking.js             # Queue & match creation
@@ -70,10 +71,9 @@ project-root/
 
 ### Controls
 
-- **Arrow Keys / WASD**: Move your character
-- **Spacebar**: Jump
-- **Z / J**: Light Attack
-- **X / K**: Heavy Attack
+- **WAD**: Move your character
+- **S**: Block Damage
+- **Z / J**: Basic Attack
 - **C / L**: Special Ability
 
 ### Gameplay Flow
