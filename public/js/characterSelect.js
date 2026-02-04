@@ -14,9 +14,9 @@ const CHARACTERS = [
   { id: "kakashi", name: "Kakashi", image:'../assets/characters/kakashi/kakashi.gif' }
 ];
 const characterSelectState = {
-  selectedCharacter: null,
-  opponentCharacter: null,
-  locked: false
+    selectedCharacter: null,
+    opponentCharacter: null,
+    locked: false
 };
 
 //open char select
@@ -42,29 +42,32 @@ const renderCharacterGrid = ()=>{
     grid.innerHTML = "";
     
     CHARACTERS.forEach((char)=>{
-            const slot = document.createElement('button');
-            slot.className = "character-slot";
+        const slot = document.createElement('button');
 
-            if (char.image) {
+        slot.className = "character-slot";
+        if (char.image) {
             const img = document.createElement('img');
             img.src = char.image;
             img.alt = char.name;
             slot.appendChild(img);
+        }
+        else {
+            slot.textContent = char.name;
+        }
+    
+        slot.onclick = ()=>{
+            if(characterSelectState.locked){
+              return;
             }
-            else {
-                slot.textContent = char.name;
+            if (char.id === characterSelectState.opponentCharacter) {
+              return;
             }
-        
-                slot.onclick = ()=>{
-                    if(characterSelectState.locked){
-                      return;
-                    }
-            
-                    characterSelectState.selectedCharacter = char.id;
-                    socket.emit("selectCharacter", char.id);
-                    updatePlayerPreview(player1Preview, char);
-                    updateSelectionUI();
-                };    
+    
+            characterSelectState.selectedCharacter = char.id;
+            socket.emit("selectCharacter", char.id);
+            updatePlayerPreview(player1Preview, char);
+            updateSelectionUI();
+        };    
 
       grid.appendChild(slot);
     });
@@ -97,31 +100,40 @@ const updatePlayerPreview = (previewElement, character) => {
 
 //update character selection ui
 const updateSelectionUI = ()=>{
-    document.querySelectorAll(".character-slot").forEach((btn)=>{
-        btn.classList.remove("selected");
+    document.querySelectorAll(".character-slot").forEach((btn, index)=>{
+        btn.classList.remove("selected", "locked", "taken");
         btn.removeAttribute("data-player");
+        const charId = CHARACTERS[index].id;
+        if(characterSelectState.opponentCharacter === charId && characterSelectState.selectedCharacter !== charId){
+            btn.classList.add("locked", "taken");
+        }
     }); 
 
-   //mark player 1's character
-    if (characterSelectState.selectedCharacter) {
-        const p1Index = CHARACTERS.findIndex(c => c.id === characterSelectState.selectedCharacter);
-        if (p1Index !== -1) {
-            const p1Slot = grid.children[p1Index];
-            p1Slot.classList.add("selected");
-            p1Slot.setAttribute("data-player", "P1");
-        }
-        lockBtn.disabled = false;
+    
+  //player 1 selection
+  if (characterSelectState.selectedCharacter) {
+    const p1Index = CHARACTERS.findIndex(
+      c => c.id === characterSelectState.selectedCharacter
+    );
+    if (p1Index !== -1) {
+      const p1Slot = grid.children[p1Index];
+      p1Slot.classList.add("selected");
+      p1Slot.setAttribute("data-player", "P1");
     }
+    lockBtn.disabled = false;
+  }
 
-    //mark player 2's character
-    if (characterSelectState.opponentCharacter) {
-        const p2Index = CHARACTERS.findIndex(c => c.id === characterSelectState.opponentCharacter);
-        if (p2Index !== -1) {
-            const p2Slot = grid.children[p2Index];
-            p2Slot.classList.add("selected");
-            p2Slot.setAttribute("data-player", "P2");
-        }
+  //player 2 selection
+  if (characterSelectState.opponentCharacter) {
+    const p2Index = CHARACTERS.findIndex(
+      c => c.id === characterSelectState.opponentCharacter
+    );
+    if (p2Index !== -1) {
+      const p2Slot = grid.children[p2Index];
+      p2Slot.classList.add("selected");
+      p2Slot.setAttribute("data-player", "P2");
     }
+  }
 };
 
 //lock button logic
@@ -145,8 +157,9 @@ const showOpponentPreview = (socketId, characterId)=>{
     const opponentChar = CHARACTERS.find(c => c.id === characterId);
     if (opponentChar) {
         updatePlayerPreview(player2Preview, opponentChar);
-        updateSelectionUI();
     }
+    updateSelectionUI();
+    document.getElementById('p2-label').classList.add('active');
 };
 
 export { openCharacterSelect, showOpponentPreview };

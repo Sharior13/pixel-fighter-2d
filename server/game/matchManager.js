@@ -40,7 +40,7 @@ const getMatchBySocket = (socket)=>{
     return null;
 };
 
-//charcter selection logic
+//character selection logic
 const selectCharacter = (socket, characterId)=>{
     const match = getMatchBySocket(socket);
 
@@ -55,6 +55,16 @@ const selectCharacter = (socket, characterId)=>{
     const player = match.players.find(p => p.socketId === socket.id);
     if(!player || player.locked){
         return null;
+    }
+
+    // NEW: Check if another player has already selected this character
+    const isCharacterTaken = match.players.some(p => 
+        p.socketId !== socket.id && p.character === characterId
+    );
+    
+    if(isCharacterTaken){
+        console.log(`[MatchManager] Character ${characterId} already selected by another player`);
+        return { error: 'character_taken' };
     }
 
     player.character = characterId;
@@ -73,6 +83,16 @@ const lockCharacter = (socket)=>{
     const player = match.players.find(p => p.socketId === socket.id);
     if(!player || !player.character){
         return null;
+    }
+
+    // NEW: Double-check character isn't taken before locking
+    const isCharacterTaken = match.players.some(p => 
+        p.socketId !== socket.id && p.character === player.character
+    );
+    
+    if(isCharacterTaken){
+        console.log(`[MatchManager] Cannot lock - character ${player.character} already selected`);
+        return { error: 'character_taken' };
     }
 
     player.locked = true;
@@ -98,10 +118,24 @@ const startCharacterSelectTimeout = (match, startOnTimeout, duration = GAME_CONF
             return;
         }
 
+        // NEW: Assign random characters ensuring no duplicates
+        const usedCharacters = new Set();
+        
         currentMatch.players.forEach((p)=>{
             if(!p.character){
-                p.character = getRandomCharacter();
+                // Get a random character that hasn't been used
+                let randomChar;
+                let attempts = 0;
+                const maxAttempts = 20; // Prevent infinite loop
+                
+                do {
+                    randomChar = getRandomCharacter();
+                    attempts++;
+                } while (usedCharacters.has(randomChar) && attempts < maxAttempts);
+                
+                p.character = randomChar;
             }
+            usedCharacters.add(p.character);
             p.locked = true;
         });
 

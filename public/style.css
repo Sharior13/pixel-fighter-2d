@@ -541,6 +541,32 @@ body{
     color: var(--text-white);
     text-shadow: 2px 2px 0 var(--shadow-dark);
 }
+.character-slot.taken::after {
+    content: 'TAKEN';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-family: 'Press Start 2P', cursive;
+    font-size: 14px;
+    letter-spacing: 1px;
+
+    color: #ffd700;
+    text-shadow:
+        2px 2px 0 rgba(0, 0, 0, 0.9),
+        0 0 10px rgba(255, 215, 0, 0.6);
+
+    background: linear-gradient(
+        rgba(0, 0, 0, 0.6),
+        rgba(0, 0, 0, 0.6)
+    );
+
+    z-index: 5;
+    pointer-events: none;
+}
+
 
 /* Stage Selection */
 .stage-selection {
