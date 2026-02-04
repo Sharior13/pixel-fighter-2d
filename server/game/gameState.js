@@ -7,10 +7,20 @@ const gameLoopIntervals = new Map();
 const GAME_CONFIG = {
     tickRate: 60,
     tickInterval: 1000 / 60,
-    charSelectTimeout: 100,
+    charSelectTimeout: 1000000,
     matchDuration: 180000,
     gravity: 0.5,
-    inputBufferSize: 10
+    inputBufferSize: 10,
+    dash:{
+        speed: 5,
+        duration: 200, 
+        cooldown: 1000,
+    },
+    block: {
+        damageReduction: 0.8,
+        perfectWindow: 100,
+        perfectReduction: 0.95
+    }
 };
 
 
@@ -63,8 +73,8 @@ const initializeGameState = (roomId, playerData, mapId)=>{
                 character: p.character,
 
                 size: {
-                    width: 125,
-                    height: 200
+                    width: 115,
+                    height: 190
                 },
 
                 //position and movement
@@ -83,9 +93,14 @@ const initializeGameState = (roomId, playerData, mapId)=>{
                 isGrounded: false,
                 isJumping: false,
                 isAttacking: false,
-                isBlocking: false,
                 isStunned: false,
                 isDead: false,
+                isDashing: false,     
+                dashTimer: 0,        
+                dashCooldownTimer: 0,
+                attackTimer: 0, 
+                isBlocking: false,      
+                blockActivatedTime: 0,
                 
                 //stats from character data
                 health: charData.stats.maxHealth,
@@ -168,6 +183,7 @@ const processInput = (roomId, socketId, input)=>{
         type: input.type,
         direction: input.direction || 0,
         ability: input.ability || null,
+        activate: input.activate !== undefined ? input.activate : null, 
         timestamp: Date.now()
     };
     
@@ -197,8 +213,17 @@ const applyMovement = (player, direction, deltaTime, mapBoundaries)=>{
 
     player.currentDirection = direction;
     
+    let speed = player.speed;
+    
+    if(player.isDashing){
+        speed = player.speed * GAME_CONFIG.dash.speed;
+    } 
+    else if(player.isBlocking){
+        speed = 0;
+    }
+    
     //apply horizontal velocity
-    player.velocity.x = direction * player.speed;
+    player.velocity.x = direction * speed;
     
     //update position
     player.position.x += player.velocity.x;
@@ -234,39 +259,102 @@ const applyGravity = (player, deltaTime, groundY)=>{
     }
 };
 
+const applyDash = (player) => {
+    // Can't dash if already dashing, attacking, stunned, or on cooldown
+    if(player.isDashing || player.isAttacking || player.isStunned || 
+       player.dashCooldownTimer > 0 || player.isBlocking || player.velocity.x == 0){
+        return { success: false, reason: 'cannot_dash' };
+    }
+    
+    // Activate dash
+    player.isDashing = true;
+    player.dashTimer = GAME_CONFIG.dash.duration;
+    player.dashCooldownTimer = GAME_CONFIG.dash.cooldown;
+    
+    console.log(`[GameState] Player ${player.socketId} dashed!`);
 
-//process ability
-const executeAbility = (gameState, player, abilityType)=>{
-    //check if ability is on cooldown
-    if(player.cooldowns[abilityType] > 0){
-        return { success: false, reason: 'cooldown' };
+    return { success: true };
+};
+
+const applyBlock = (player, activate) => {
+    if(activate){
+        if(!player.isBlocking && !player.isAttacking && !player.isStunned){
+            player.isBlocking = true;
+            player.blockActivatedTime = Date.now();
+            console.log(`[GameState] Player ${player.socketId} started blocking`);
+        }
+    } 
+    else {
+        if(player.isBlocking){
+            player.isBlocking = false;
+            console.log(`[GameState] Player ${player.socketId} stopped blocking`);
+        }
     }
-    
-    //check if player can use ability
-    if(player.isStunned || player.isDead){
-        return { success: false, reason: 'disabled' };
-    }
-    
-    const ability = player.abilities[abilityType];
+};
+
+
+const executeAbility = (gameState, player, abilityName)=>{
+    const ability = player.abilities[abilityName];
     
     if(!ability){
-        return { success: false, reason: 'invalid' };
+        return { success: false, reason: 'invalid_ability' };
     }
     
+    //cooldown check
+    if(player.cooldowns[abilityName] > 0){
+        return { success: false, reason: 'on_cooldown' };
+    }
+    
+    //check if player can attack
+    if(player.isStunned || player.isAttacking){
+        return { success: false, reason: 'cannot_attack' };
+    }
+    
+    //set cooldown
+    player.cooldowns[abilityName] = ability.cooldown;
     player.isAttacking = true;
-
-    player.cooldowns[abilityType] = ability.cooldown;
+    player.attackTimer = ability.duration || 300;
     
-    //find other players in range
-    const targets = gameState.players.filter((p) => p.socketId !== player.socketId && !p.isDead && Math.abs(p.position.x - player.position.x) <= ability.range && Math.abs(p.position.y - player.position.y) <= ability.range);
-    
-    //apply damage and knockback to players
-    const hits = targets.map(target=>{
-        target.health -= ability.damage;
-        target.damageReceived += ability.damage;
+    //apply ability effects
+    const hits = gameState.players
+    .filter(target => target.socketId !== player.socketId && !target.isDead)
+    .map(target=>{
+        //hitbox checking
+        const distance = Math.abs(player.position.x - target.position.x);
+        const isInRange = distance <= ability.range;
         
-        const knockbackDir = target.position.x > player.position.x ? 1 : -1;
-        target.velocity.x = knockbackDir * ability.knockback;
+        //direction check
+        const isFacingTarget = (player.facing === 1 && target.position.x > player.position.x) ||
+                              (player.facing === -1 && target.position.x < player.position.x);
+        
+        if(!isInRange || !isFacingTarget){
+            return null;
+        }
+        
+        let damage = ability.damage;
+        
+        //block logic
+        if(target.isBlocking){
+            const blockTime = Date.now() - target.blockActivatedTime;
+            const isPerfectBlock = blockTime <= GAME_CONFIG.block.perfectWindow;
+            
+            if(isPerfectBlock){
+                damage *= (1 - GAME_CONFIG.block.perfectReduction);
+                console.log(`[GameState] Perfect block! Damage reduced to ${damage}`);
+            } else {
+                damage *= (1 - GAME_CONFIG.block.damageReduction);
+            }
+        }
+        
+        target.health -= damage;
+        target.damageReceived += damage;
+        
+        //knockback
+        if(ability.knockback){
+            target.velocity.x = player.facing * ability.knockback.x;
+            target.velocity.y = -ability.knockback.y;
+            target.isGrounded = false;
+        }
         
         //check if player died
         if(target.health <= 0){
@@ -285,7 +373,6 @@ const executeAbility = (gameState, player, abilityType)=>{
             healthRemaining: target.health
         };
     });
-    
     //reset state after ability
     setTimeout(()=>{
         player.isAttacking = false;
@@ -327,6 +414,31 @@ const gameTick = (roomId, io)=>{
         
         //update cooldowns
         updateCooldowns(player, deltaTime);
+
+        if(player.dashTimer > 0){
+            player.dashTimer -= deltaTime;
+            if(player.dashTimer <= 0){
+                player.dashTimer = 0;
+                player.isDashing = false;
+            }
+        }
+
+        //update dash cooldown
+        if(player.dashCooldownTimer > 0){
+            player.dashCooldownTimer -= deltaTime;
+            if(player.dashCooldownTimer <= 0){
+                player.dashCooldownTimer = 0;
+            }
+        }
+
+        //update attack timer 
+        if(player.attackTimer > 0){
+            player.attackTimer -= deltaTime;
+            if(player.attackTimer <= 0){
+                player.attackTimer = 0;
+                player.isAttacking = false;
+            }
+        }
         
         //process all buffered inputs
         let latestMovement = null;
@@ -338,7 +450,8 @@ const gameTick = (roomId, io)=>{
 
             if(input.type === 'move'){
                 latestMovement = input;
-            } else {
+            }
+            else {
                 otherInputs.push(input);
             }
         }
@@ -368,18 +481,13 @@ const gameTick = (roomId, io)=>{
                     }
                     break;
                 case 'block':
-                    player.isBlocking = true;
-                    setTimeout(()=>{
-                        player.isBlocking = false;
-                    }, 500);
+                    applyBlock(player, input.activate);
+                    break;
+                case 'dash':
+                    applyDash(player);
                     break;
             }
         });
-
-        //if no movement input continue with last direction
-        if(!latestMovement && player.currentDirection !== 0){
-            applyMovement(player, player.currentDirection, deltaTime, gameState.map.boundaries);
-        }
         
         applyGravity(player, deltaTime, gameState.map.groundY);
         
@@ -489,6 +597,7 @@ const getClientGameState = (gameState)=>{
             isGrounded: p.isGrounded,
             isAttacking: p.isAttacking,
             isBlocking: p.isBlocking,
+            isDashing: p.isDashing, 
             isStunned: p.isStunned,
             isDead: p.isDead,
             cooldowns: p.cooldowns,

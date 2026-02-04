@@ -8,10 +8,10 @@ const statusText = document.getElementById("statusText");
 
 //temporary
 const CHARACTERS = [
-  { id: "luffy", name: "Luffy", image:'../assets/characters/luffy/luffy-idle.png' },
-  { id: "naruto", name: "Naruto", image:'../assets/characters/naruto/naruto-idle.png' },
-  { id: "zoro", name: "Zoro", image:'../assets/characters/zoro/zoro-idle.png' },
-  { id: "kakashi", name: "Kakashi", image:'../assets/characters/kakashi/kakashi-idle.png' }
+  { id: "luffy", name: "Luffy", image:'../assets/characters/luffy/luffy.gif' },
+  { id: "naruto", name: "Naruto", image:'../assets/characters/naruto/naruto.gif' },
+  { id: "zoro", name: "Zoro", image:'../assets/characters/zoro/zoro.gif' },
+  { id: "kakashi", name: "Kakashi", image:'../assets/characters/kakashi/kakashi.gif' }
 ];
 const characterSelectState = {
   selectedCharacter: null,
@@ -44,7 +44,6 @@ const renderCharacterGrid = ()=>{
     CHARACTERS.forEach((char)=>{
             const slot = document.createElement('button');
             slot.className = "character-slot";
-            slot.textContent = char.id;
 
             if (char.image) {
             const img = document.createElement('img');

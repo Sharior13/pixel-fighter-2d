@@ -36,6 +36,7 @@ body{
     border: 1px solid black;
     z-index: -1;
     position: absolute;
+    opacity: 97%;
 }
 
 .hidden {
@@ -405,8 +406,8 @@ body{
 
 .character-grid {
     display: grid;
-    grid-template-columns: repeat(4, 100px);
-    grid-auto-rows: 100px;
+    grid-template-columns: repeat(4, 120px);
+    grid-auto-rows: 120px;
     gap: 12px;
     margin-bottom: 15px;
     max-height: 220px;

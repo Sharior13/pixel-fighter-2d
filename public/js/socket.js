@@ -99,19 +99,23 @@ const initializeSocket = (mode, roomId)=>{
 const processInputs = ()=>{
     const inputs = [];
 
-    //movement
     let direction = 0;
-    if(keys.a || keys.ArrowLeft) direction = -1;
-    if(keys.d || keys.ArrowRight) direction = 1;
+    if(keys.a) direction = -1;
+    if(keys.d) direction = 1;
     
-    //send movement input continuously
     inputs.push({ type: "move", direction });
     lastSentDirection = direction;
     
     //jump
-    if((keys.w || keys.ArrowUp) && !actionTriggered.jump) {
+    if((keys.w || keys[' ']) && !actionTriggered.jump) {
         inputs.push({ type: "jump" });
         actionTriggered.jump = true;
+    }
+    
+    //dash
+    if(keys.Shift && !actionTriggered.dash) {
+        inputs.push({ type: "dash" });
+        actionTriggered.dash = true;
     }
     
     //attackz
@@ -129,9 +133,17 @@ const processInputs = ()=>{
     }
     
     //block
-    if(keys.Shift && !actionTriggered.block) {
-        inputs.push({ type: "block" });
-        actionTriggered.block = true;
+    if(keys.s){
+        if(!actionTriggered.block){
+            inputs.push({ type: "block", activate: true });
+            actionTriggered.block = true;
+        }
+    }
+    else{
+        if(actionTriggered.block){
+            inputs.push({ type: "block", activate: false });
+            actionTriggered.block = false;
+        }
     }
     
     //send all inputs at once
@@ -140,9 +152,8 @@ const processInputs = ()=>{
     }
 };
 
+//handle player disconnect after game ends
 const cleanupSocket = ()=>{
-
-    //handle player disconnect after game ends
     if(inputInterval){
         clearInterval(inputInterval);
         inputInterval = null;

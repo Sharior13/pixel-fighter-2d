@@ -1,4 +1,8 @@
 import { socket } from "./socket.js";
+import { spriteManager } from "./spriteAnimator.js";
+import { characterSpriteConfigs } from "./characterSprites.js";
+import { animationStateManager } from "./animationStateManager.js";
+
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
@@ -15,6 +19,7 @@ let currentGameState = null;
 let animationFrameId = null;
 let currentMap = null;
 let bgImg = null;
+let lastFrameTime = performance.now();
 
 const camera = {
     x: 0,
@@ -55,9 +60,36 @@ const setMap = (mapData)=>{
 };
 
 const updateGameState = (state)=>{
+    const isFirstState = !currentGameState;
     currentGameState = state;
+    
+    // Initialize sprite animators for new players
+    if (isFirstState && state.players) {
+        state.players.forEach(player => {
+            initializePlayerSprites(player);
+        });
+    }
 };
 
+const initializePlayerSprites = (player) => {
+    const characterId = player.character.toLowerCase();
+    const config = characterSpriteConfigs[characterId];
+    
+    if (!config) {
+        console.warn(`[Render] No sprite config found for character: ${characterId}`);
+        return;
+    }
+    
+    if (!spriteManager.sprites.has(characterId)) {
+        spriteManager.loadCharacter(characterId, config);
+    }
+    
+    const animator = spriteManager.getAnimator(characterId);
+    if (animator) {
+        animationStateManager.registerPlayer(player.socketId, animator);
+        console.log(`[Render] Initialized sprites for player: ${player.socketId} (${characterId})`);
+    }
+};
 
 const stopRender = ()=>{
     if(animationFrameId){
@@ -73,6 +105,9 @@ const stopRender = ()=>{
         bgImg = null;
     }
     
+    // Clear animation state manager
+    animationStateManager.clear();
+    
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     console.log("Render stopped");
 };
@@ -82,6 +117,7 @@ const initializeRender = ()=>{
         return;
     }
     isRendering = true;
+    lastFrameTime = performance.now();
     console.log("render: ",isRendering);
     
     const drawBackground = ()=>{
@@ -197,14 +233,54 @@ const initializeRender = ()=>{
         ctx.closePath();
     };
     
-    const drawPlayer = (player)=>{
-        ctx.fillStyle = player.socketId === socket.id ? "blue" : "red";
-        ctx.fillRect(player.position.x - player.size.width/2, player.position.y - player.size.height, player.size.width, player.size.height);
+    const drawPlayer = (player, deltaTime)=>{
+        // Update and draw sprite animation
+        const animator = animationStateManager.getPlayerAnimator(player.socketId);
         
-        //facing indicator
-        ctx.fillStyle = "yellow";
-        const arrowSize = 15;
-        const arrowX = player.facing > 0 ? player.position.x + player.size.width / 2 + 10 : player.position.x - player.size.width / 2 - 10 - arrowSize;
+        if (animator) {
+            // Update animation state based on player state
+            animationStateManager.updatePlayerAnimation(player, deltaTime);
+            
+            // Get character config for scale
+            const characterId = player.character.toLowerCase();
+            const config = characterSpriteConfigs[characterId];
+            const scale = config?.scale || 2.5;
+            
+            //hitbox
+
+            // ctx.fillStyle = player.socketId === socket.id ? "blue" : "red";
+            // ctx.fillRect(
+            //     player.position.x - player.size.width/2, 
+            //     player.position.y - player.size.height, 
+            //     player.size.width, 
+            //     player.size.height
+            // );
+
+            // Draw the animated sprite
+            animator.draw(
+                ctx,
+                player.position.x,
+                player.position.y,
+                player.facing,
+                scale
+            );
+        } else {
+            // Fallback: draw colored rectangle if sprite not available
+            ctx.fillStyle = player.socketId === socket.id ? "blue" : "red";
+            ctx.fillRect(
+                player.position.x - player.size.width/2, 
+                player.position.y - player.size.height, 
+                player.size.width, 
+                player.size.height
+            );
+        }
+        
+        //facing indicator 
+        ctx.fillStyle = "rgba(255, 255, 0, 0.5)";
+        const arrowSize = 10;
+        const arrowX = player.facing > 0 ? 
+            player.position.x + player.size.width / 2 + 5 : 
+            player.position.x - player.size.width / 2 - 5 - arrowSize;
         const arrowY = player.position.y - player.size.height / 2 - arrowSize / 2;
         
         ctx.beginPath();
@@ -223,12 +299,19 @@ const initializeRender = ()=>{
         
         //character name
         ctx.fillStyle = "white";
-        ctx.font = "14px Arial";
+        ctx.font = "bold 14px Arial";
         ctx.textAlign = "center";
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 3;
+        ctx.strokeText(
+            player.character, 
+            player.position.x, 
+            player.position.y - player.size.height - 35
+        );
         ctx.fillText(
             player.character, 
             player.position.x, 
-            player.position.y - player.size.height - 30
+            player.position.y - player.size.height - 35
         );
     };
     
@@ -348,11 +431,15 @@ const initializeRender = ()=>{
         });
     };
     
-    const animate = () => {
+    const animate = (currentTime) => {
         if(!isRendering){
             return;
         }
         animationFrameId = requestAnimationFrame(animate);
+
+        // Calculate delta time in milliseconds
+        const deltaTime = currentTime - lastFrameTime;
+        lastFrameTime = currentTime;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         
@@ -370,13 +457,15 @@ const initializeRender = ()=>{
         
         //render players
         currentGameState.players.forEach(player=>{
-            //draw player sprite
-            drawPlayer(player);
+            //draw player sprite with animation
+            drawPlayer(player, deltaTime);
             
             //draw health bar
             drawHealthBar(player);
         });
+        
         ctx.restore();
+        
         currentGameState.players.forEach(player=>{
             //draw cooldown indicators
             drawCooldowns(player);
@@ -389,7 +478,7 @@ const initializeRender = ()=>{
         // drawGridLines();
         // drawMapBoundaries();
     };
-    animate();
+    animate(lastFrameTime);
 };
 
 export { initializeRender, stopRender, setMap, updateGameState, canvas };
