@@ -23,7 +23,7 @@ A real-time multiplayer 2D fighting game built with Node.js, Socket.io, and HTML
 
 1. Clone the repository:
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Sharior13/pixel-fighter-2d.git
 cd pixel-fighter-2d
 ```
 
@@ -39,7 +39,7 @@ node server.js
 
 4. Open your browser and navigate to:
 ```
-http://localhost:3000
+http://localhost: 2000
 ```
 
 ## Project Structure
