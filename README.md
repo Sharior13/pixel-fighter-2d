@@ -39,7 +39,7 @@ node server.js
 
 4. Open your browser and navigate to:
 ```
-http://localhost: 2000
+http://localhost:2000
 ```
 
 ## Project Structure
@@ -50,7 +50,7 @@ project-root/
 │   └──assets/                         # Essential game files
 │   └── index.html                     # Main HTML entry point
 │   └── style.css                      # Global styles
-│   └── js/                            # Essential java files
+│   └── js/                            # Essential javascript files
 │       ├── main.js                    # Client entry, title screen logic
 │       ├── socket.js                  # Client-side socket & input handling
 │       ├── render.js                  # Game rendering & animation loop
@@ -71,7 +71,8 @@ project-root/
 
 ### Controls
 
-- **WAD**: Move your character
+- **A / D**: Move your character
+- **W**: Jump
 - **S**: Block Damage
 - **Z / J**: Basic Attack
 - **C / L**: Special Ability
