@@ -1,5 +1,6 @@
 const { getCharacterData } = require('./characterData.js');
 const { getMapData } = require('./maps.js');
+const { AttackHandler } = require('./attackHandler.js');
 
 const gameStates = new Map();
 const gameLoopIntervals = new Map();
@@ -112,10 +113,16 @@ const initializeGameState = (roomId, playerData, mapId)=>{
                 //abilities and cooldowns
                 abilities: charData.abilities,
                 cooldowns: {
+                    dash: 0,
+                    attack1: 0,
+                    attack2: 0,
                     basic: 0,
                     special: 0,
-                    ultimate: 0
+                    ultimate: 0,
                 },
+                currentAttack: null,
+                attackStartTime: null,
+                attackFrame: 0,
                 
                 //combat stats
                 combo: 0,
@@ -137,6 +144,7 @@ const initializeGameState = (roomId, playerData, mapId)=>{
         projectiles: [],
         effects: []
     };
+    gameState.attackHandler = new AttackHandler();
 
     gameStates.set(roomId, gameState);
     console.log(`[GameState] Initialized game state for room ${roomId}`);
@@ -396,6 +404,7 @@ const gameTick = (roomId, io)=>{
     
     const currentTime = Date.now();
     const deltaTime = currentTime - gameState.lastUpdateTime;
+    gameState.attackHandler.updateAttacks(gameState, deltaTime);
     gameState.lastUpdateTime = currentTime;
     gameState.tickCount++;
     
@@ -405,13 +414,71 @@ const gameTick = (roomId, io)=>{
         endMatch(roomId, io);
         return;
     }
-    
+    const checkMatchEnd = (gameState) => {
+        // Check if time is up
+        if (gameState.timeRemaining <= 0) {
+            const p1 = gameState.players[0];
+            const p2 = gameState.players[1];
+
+            let winner;
+            if (p1.health > p2.health) {
+                winner = p1.socketId;
+                p1.state = 'victory';
+                p2.state = 'defeated';
+            } else if (p2.health > p1.health) {
+                winner = p2.socketId;
+                p2.state = 'victory';
+                p1.state = 'defeated';
+            } else {
+                // Draw - both defeated
+                winner = null;
+                p1.state = 'defeated';
+                p2.state = 'defeated';
+            }
+
+            return { gameEnded: true, winner, reason: 'timeout' };
+        }
+
+        // Check for K.O.
+        const alivePlayers = gameState.players.filter(p => !p.isDead);
+
+        if (alivePlayers.length === 1) {
+            // One player left - they win
+            const winner = alivePlayers[0];
+            const loser = gameState.players.find(p => p.socketId !== winner.socketId);
+
+            winner.state = 'victory';
+            loser.state = 'defeated';
+            loser.isDead = true;
+
+            return { gameEnded: true, winner: winner.socketId, reason: 'ko' };
+        }
+
+        if (alivePlayers.length === 0) {
+            // Both dead - draw
+            gameState.players.forEach(p => p.state = 'defeated');
+            return { gameEnded: true, winner: null, reason: 'double_ko' };
+        }
+
+        return { gameEnded: false };
+    };
     //update all players
     gameState.players.forEach(player=>{
         if(player.isDead){
             return;
         }
-        
+
+        Object.keys(player.cooldowns).forEach(ability => {
+            if (player.cooldowns[ability] > 0) {
+                player.cooldowns[ability] -= deltaTime;
+                if (player.cooldowns[ability] < 0) {
+                    player.cooldowns[ability] = 0;
+                }
+            }
+        });
+        if (player.isStunned && Date.now() >= player.stunEndTime) {
+        player.isStunned = false;
+        }
         //update cooldowns
         updateCooldowns(player, deltaTime);
 
@@ -469,15 +536,16 @@ const gameTick = (roomId, io)=>{
                     applyJump(player);
                     break;
                 case 'attack':
-                    if(input.ability){
-                        const result = executeAbility(gameState, player, input.ability);
-                        if(result.success){
-                            io.to(roomId).emit('abilityExecuted', {
-                                socketId: player.socketId,
-                                ability: input.ability,
-                                result
-                            });
-                        }
+                    const result = gameState.attackHandler.initiateAttack(
+                        gameState,
+                        player,
+                        input.ability
+                    );
+                    
+                    if (result.success) {
+                        console.log(`[GameState] ${player.socketId} started ${input.ability}`);
+                    } else {
+                        console.log(`[GameState] Attack ${input.ability} failed: ${result.reason}`);
                     }
                     break;
                 case 'block':
@@ -496,6 +564,69 @@ const gameTick = (roomId, io)=>{
             player.combo = 0;
         }
     });
+    const matchEndCheck = checkMatchEnd(gameState);
+
+    if (matchEndCheck.gameEnded) {
+        // Play victory/defeat animations for 3 seconds before ending
+        const animationDuration = 3000;
+        
+        setTimeout(() => {
+            // Stop game loop
+            if (gameLoopIntervals.has(roomId)) {
+                clearInterval(gameLoopIntervals.get(roomId));
+                gameLoopIntervals.delete(roomId);
+            }
+            
+            // Send final game state with animations
+            io.to(roomId).emit('gameStateUpdate', {
+                players: gameState.players.map(p => ({
+                    socketId: p.socketId,
+                    playerIndex: p.playerIndex,
+                    character: p.character,
+                    position: p.position,
+                    velocity: p.velocity,
+                    facing: p.facing,
+                    health: p.health,
+                    maxHealth: p.maxHealth,
+                    isGrounded: p.isGrounded,
+                    isAttacking: p.isAttacking,
+                    currentAttack: p.currentAttack,
+                    attackFrame: p.attackFrame,
+                    isBlocking: p.isBlocking,
+                    isDashing: p.isDashing,
+                    isStunned: p.isStunned,
+                    isDead: p.isDead,
+                    state: p.state, // 'victory' or 'defeated'
+                    cooldowns: p.cooldowns,
+                    combo: p.combo
+                })),
+                timeRemaining: gameState.timeRemaining
+            });
+            
+            // Send match end event
+            io.to(roomId).emit('matchEnd', {
+                winner: matchEndCheck.winner,
+                finalStats: gameState.players.map(p => ({
+                    socketId: p.socketId,
+                    character: p.character,
+                    health: p.health,
+                    damage: p.damage,
+                    damageReceived: p.damageReceived,
+                    combo: p.combo,
+                    killCount: p.killCount
+                })),
+                reason: matchEndCheck.reason
+            });
+            
+            console.log(`[GameState] Match ended in room ${roomId}. Winner: ${matchEndCheck.winner || 'Draw'}`);
+            
+            // Don't delete game state immediately - keep for rematch
+            // gameStates.delete(roomId);
+            
+        }, animationDuration);
+        
+        return; // Stop further game loop iterations
+    }
     
     //win conditions
     const alivePlayers = gameState.players.filter(p => !p.isDead);
@@ -595,7 +726,9 @@ const getClientGameState = (gameState)=>{
             health: p.health,
             maxHealth: p.maxHealth,
             isGrounded: p.isGrounded,
-            isAttacking: p.isAttacking,
+            isAttacking: p.isAttacking || false,
+            currentAttack: p.currentAttack || null,
+            attackFrame: p.attackFrame || 0,
             isBlocking: p.isBlocking,
             isDashing: p.isDashing, 
             isStunned: p.isStunned,

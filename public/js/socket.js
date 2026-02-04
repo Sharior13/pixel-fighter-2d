@@ -2,6 +2,7 @@ import { openCharacterSelect, showOpponentPreview } from "./characterSelect.js";
 import { keys, actionTriggered } from "./input.js";
 import { titleScreen } from "./main.js";
 import { initializeRender, stopRender, setMap, updateGameState } from "./render.js";
+import { matchEndScreen } from "./matchEndScreen.js";
 
 let socket = null;
 let inMatch = false;
@@ -62,8 +63,6 @@ const initializeSocket = (mode, roomId)=>{
 
     //update game state
     socket.on("gameStateUpdate", (state)=>{
-        console.log("maybe working fine");
-
         updateGameState(state);
     });
 
@@ -72,12 +71,37 @@ const initializeSocket = (mode, roomId)=>{
         console.log(`${socketId} used ${ability}, hits:`, result.hits);
     });
 
-    //handle match end
+    //handle match end - NEW!
     socket.on("matchEnd", ({ winner, finalStats, reason })=>{
         console.log("Match ended! Winner:", winner);
-        cleanupSocket();
+        
+        // Stop game loop
         stopRender();
-        titleScreen();
+        
+        // Show match end screen with stats
+        const localPlayer = finalStats.find(p => p.socketId === socket.id);
+        const opponent = finalStats.find(p => p.socketId !== socket.id);
+        
+        matchEndScreen.show({
+            winner,
+            localPlayer,
+            opponent,
+            reason
+        });
+        
+        inMatch = false;
+    });
+
+    // Handle rematch responses 
+    socket.on("rematchAccepted", ({ roomId })=>{
+        console.log("Rematch accepted!");
+        matchEndScreen.handleRematchAccepted();
+        openCharacterSelect();
+    });
+
+    socket.on("rematchDeclined", ()=>{
+        console.log("Rematch declined by opponent");
+        matchEndScreen.handleRematchDeclined();
     });
 
     socket.on("matchError", ({errMsg})=>{
