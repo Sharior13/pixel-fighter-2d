@@ -2,6 +2,7 @@ import { initializeRender, canvas } from "../core/render.js";
 import { initializeSocket } from "../core/socket.js";
 import "./characterSelect.js";
 import "../core/input.js";
+import { audioManager } from "../core/audioManager.js";
 
 class TitleScreenUI {
     constructor() {
@@ -28,10 +29,16 @@ class TitleScreenUI {
     }
     
     initialize() {
+        // Load audio settings first
+        audioManager.loadSettingsFromStorage();
+        
         this.setupTitleScreen();
         this.setupSettingsScreen();
         this.setupProfileScreen();
         this.showTitleScreen();
+        
+        // Play title music
+        audioManager.playTitleMusic();
     }
     
     // ==================== TITLE SCREEN ====================
@@ -123,6 +130,9 @@ class TitleScreenUI {
         canvas.style.backgroundImage = "url('../assets/background/title-bg.gif')";
         this.titleDiv.style.display = "flex";
         
+        // Play title music
+        audioManager.playTitleMusic();
+        
         // Hide other screens
         if (this.settingsContainer) {
             this.settingsContainer.classList.add('hidden');
@@ -194,7 +204,7 @@ class TitleScreenUI {
                     this.masterValueDisplay.textContent = percentage;
                 }
                 this.saveSettings();
-                this.applyMasterVolume(value / 100);
+                audioManager.setMasterVolume(value / 100);
                 break;
                 
             case 'music':
@@ -202,7 +212,7 @@ class TitleScreenUI {
                     this.musicValueDisplay.textContent = percentage;
                 }
                 this.saveSettings();
-                this.applyMusicVolume(value / 100);
+                audioManager.setMusicVolume(value / 100);
                 break;
                 
             case 'sfx':
@@ -210,24 +220,9 @@ class TitleScreenUI {
                     this.sfxValueDisplay.textContent = percentage;
                 }
                 this.saveSettings();
-                this.applySFXVolume(value / 100);
+                audioManager.setSFXVolume(value / 100);
                 break;
         }
-    }
-    
-    applyMasterVolume(volume) {
-        // This would apply to all audio elements
-        console.log('[TitleScreenUI] Master volume set to:', volume);
-    }
-    
-    applyMusicVolume(volume) {
-        // This would apply to background music
-        console.log('[TitleScreenUI] Music volume set to:', volume);
-    }
-    
-    applySFXVolume(volume) {
-        // This would apply to sound effects
-        console.log('[TitleScreenUI] SFX volume set to:', volume);
     }
     
     saveSettings() {
@@ -254,19 +249,16 @@ class TitleScreenUI {
                 if (this.masterVolumeSlider && settings.masterVolume !== undefined) {
                     this.masterVolumeSlider.value = settings.masterVolume;
                     this.masterValueDisplay.textContent = settings.masterVolume + '%';
-                    this.applyMasterVolume(settings.masterVolume / 100);
                 }
                 
                 if (this.musicVolumeSlider && settings.musicVolume !== undefined) {
                     this.musicVolumeSlider.value = settings.musicVolume;
                     this.musicValueDisplay.textContent = settings.musicVolume + '%';
-                    this.applyMusicVolume(settings.musicVolume / 100);
                 }
                 
                 if (this.sfxVolumeSlider && settings.sfxVolume !== undefined) {
                     this.sfxVolumeSlider.value = settings.sfxVolume;
                     this.sfxValueDisplay.textContent = settings.sfxVolume + '%';
-                    this.applySFXVolume(settings.sfxVolume / 100);
                 }
                 
                 console.log('[TitleScreenUI] Settings loaded');

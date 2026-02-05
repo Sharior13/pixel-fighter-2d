@@ -1,5 +1,6 @@
 import { socket } from "../core/socket.js";
 import { canvas } from "../core/render.js";
+import { audioManager } from "../core/audioManager.js";
 
 const grid = document.getElementById("character-grid");
 const lockBtn = document.getElementById("lockBtn");
@@ -27,6 +28,15 @@ const characterSelectState = {
     locked: false,
     timerInterval: null,
     timeRemaining: 30
+};
+
+const playCharacterLockSound = (characterId) => {
+    if (!characterId) return;
+
+    // Use audioManager for proper volume control
+    audioManager.playSFX(
+        `../assets/characters/${characterId}/${characterId}-select.ogg`
+    );
 };
 
 //open char select
@@ -206,6 +216,8 @@ lockBtn.onclick = ()=>{
     document.getElementById('p1-label').classList.add('active');
     characterSelectState.locked = true;
     lockBtn.disabled = true;
+
+    playCharacterLockSound(characterSelectState.selectedCharacter);
     socket.emit("lockCharacter");   
     
     document.getElementById("statusText").textContent = "Locked in! Waiting for opponent...";
@@ -222,7 +234,8 @@ const showOpponentPreview = (socketId, characterId)=>{
     }
     updateSelectionUI();
     if(opponentChar.locked){
-      document.getElementById('p2-label').classList.add('active');
+        document.getElementById('p2-label').classList.add('active');
+        playCharacterLockSound(characterId); 
     }
 };
 

@@ -4,10 +4,12 @@ import { titleScreenUI } from "../ui/titleScreen.js";
 import { initializeRender, stopRender, setMap, updateGameState, triggerKOAnimation  } from "./render.js";
 import { matchEndScreen } from "../ui/matchEndScreen.js";
 import { battleUI } from "../ui/battleUI.js";
+import { audioManager } from "./audioManager.js";
 
 let socket = null;
 let inMatch = false;
 let inputInterval = null;
+let currentCharacterId = null;
 
 const initializeSocket = (mode, roomId) => {
     if (socket) {
@@ -85,6 +87,28 @@ const initializeSocket = (mode, roomId) => {
         canvas.style.backgroundImage = 'none';
 
         setMap(gameState.map);
+        
+        // Play map music
+        if (gameState.map && gameState.map.id) {
+            console.log('[Socket] Playing map music:', gameState.map.id);
+            audioManager.playMapMusic(gameState.map.id);
+        }
+        
+        // Find local player's character and preload sounds
+        const localPlayer = gameState.players.find(p => p.socketId === socket.id);
+        if (localPlayer && localPlayer.character) {
+            currentCharacterId = localPlayer.character;
+            audioManager.preloadCharacterSounds(localPlayer.character);
+            console.log('[Socket] Preloaded sounds for:', localPlayer.character);
+        }
+        
+        // Preload opponent's sounds too
+        const opponent = gameState.players.find(p => p.socketId !== socket.id);
+        if (opponent && opponent.character) {
+            audioManager.preloadCharacterSounds(opponent.character);
+            console.log('[Socket] Preloaded opponent sounds for:', opponent.character);
+        }
+        
         battleUI.initialize(gameState);
         initializeRender();
     });
@@ -119,9 +143,24 @@ const initializeSocket = (mode, roomId) => {
                 finalStats,
                 reason
             });
+            
+            // Clean up character sounds
+            if (localPlayer && localPlayer.character) {
+                audioManager.unloadCharacterSounds(localPlayer.character);
+            }
+            if (opponent && opponent.character) {
+                audioManager.unloadCharacterSounds(opponent.character);
+            }
+            
+            // Stop map music and return to title music after fade out
+            audioManager.stopMusic(true);
+            setTimeout(() => {
+                audioManager.playTitleMusic();
+            }, 600);
         }, 2500);
 
         inMatch = false;
+        currentCharacterId = null;
     });
 
     // Handle rematch responses
@@ -173,6 +212,11 @@ const processInputs = () => {
     if ((keys.w || keys[' ']) && !actionTriggered.jump) {
         inputs.push({ type: "jump" });
         actionTriggered.jump = true;
+        
+        // Play jump sound
+        if (currentCharacterId) {
+            audioManager.playJumpSound(currentCharacterId);
+        }
     }
 
     // Dash
@@ -185,22 +229,47 @@ const processInputs = () => {
     if (keys.q && !actionTriggered.attack1) {
         inputs.push({ type: "attack", ability: "attack1" });
         actionTriggered.attack1 = true;
+        
+        // Play attack sound
+        if (currentCharacterId) {
+            audioManager.playAttackSound(currentCharacterId, "attack1");
+        }
     }
     if (keys.e && !actionTriggered.attack2) {
         inputs.push({ type: "attack", ability: "attack2" });
         actionTriggered.attack2 = true;
+        
+        // Play attack sound
+        if (currentCharacterId) {
+            audioManager.playAttackSound(currentCharacterId, "attack2");
+        }
     }
     if (keys.z && !actionTriggered.basic) {
         inputs.push({ type: "attack", ability: "basic" });
         actionTriggered.basic = true;
+        
+        // Play attack sound
+        if (currentCharacterId) {
+            audioManager.playAttackSound(currentCharacterId, "basic");
+        }
     }
     if (keys.x && !actionTriggered.special) {
         inputs.push({ type: "attack", ability: "special" });
         actionTriggered.special = true;
+        
+        // Play attack sound
+        if (currentCharacterId) {
+            audioManager.playAttackSound(currentCharacterId, "special");
+        }
     }
     if (keys.c && !actionTriggered.ultimate) {
         inputs.push({ type: "attack", ability: "ultimate" });
         actionTriggered.ultimate = true;
+        
+        // Play attack sound
+        if (currentCharacterId) {
+            audioManager.playAttackSound(currentCharacterId, "ultimate");
+        }
     }
 
     // Block
@@ -230,6 +299,7 @@ const cleanupSocket = () => {
     }
 
     inMatch = false;
+    currentCharacterId = null;
 
     if (socket) {
         socket.off();

@@ -1,5 +1,6 @@
 import { socket, cleanupSocket } from "../core/socket.js";
 import { titleScreenUI } from "./titleScreen.js";
+import { audioManager } from "../core/audioManager.js";
 
 class MatchEndScreen {
     constructor() {
@@ -147,10 +148,13 @@ class MatchEndScreen {
         // Clean up and return to title screen
         this.hide();
         
+        // Stop any playing music and ensure clean state
+        audioManager.stopMusic(false); // Immediate stop, no fade
+        
         // Clean up socket connection
         cleanupSocket();
 
-        // Show title screen
+        // Show title screen (which will start title music)
         titleScreenUI.showTitleScreen();
     }
 

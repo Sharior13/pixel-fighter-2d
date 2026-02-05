@@ -4,6 +4,7 @@ import { characterSpriteConfigs } from "../data/characterSprites.js";
 import { animationStateManager } from "./animationStateManager.js";
 import { battleUI } from "../ui/battleUI.js";
 import { getPlayerUsername } from "../ui/titleScreen.js";
+import { audioManager } from "./audioManager.js";
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
@@ -27,6 +28,9 @@ let lastFrameTime = performance.now();
 let showKOOverlay = false;
 let koAnimationStartTime = 0;
 const KO_DISPLAY_DURATION = 2000; // Show KO for 2 seconds
+
+// Track player health for hit sound detection
+let playerHealthTracker = new Map(); // Map<socketId, previousHealth>
 
 const camera = {
     x: 0,
@@ -68,12 +72,31 @@ const setMap = (mapData)=>{
 
 const updateGameState = (state)=>{
     const isFirstState = !currentGameState;
+    const previousState = currentGameState;
     currentGameState = state;
     
     // Initialize sprite animators for new players
     if (isFirstState && state.players) {
         state.players.forEach(player => {
             initializePlayerSprites(player);
+            // Initialize health tracker
+            playerHealthTracker.set(player.socketId, player.health);
+        });
+    }
+    
+    // Check for health changes to play hit sounds
+    if (previousState && state.players) {
+        state.players.forEach(player => {
+            const previousHealth = playerHealthTracker.get(player.socketId);
+            
+            if (previousHealth !== undefined && player.health < previousHealth) {
+                // Player took damage, play hit sound
+                audioManager.playHitSound(player.character);
+                console.log(`[Render] ${player.socketId} took damage, playing hit sound`);
+            }
+            
+            // Update tracker
+            playerHealthTracker.set(player.socketId, player.health);
         });
     }
     
@@ -120,6 +143,9 @@ const stopRender = ()=>{
     // FIXED: Reset KO overlay
     showKOOverlay = false;
     koAnimationStartTime = 0;
+    
+    // Clear health tracker
+    playerHealthTracker.clear();
 
     if(bgImg){
         bgImg.remove();
