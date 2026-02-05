@@ -1,6 +1,6 @@
-const { initMatchmaking, addToQueue, removeFromQueue } = require('../game/matchMaking.js');
-const { getMatchBySocket, selectCharacter, lockCharacter, deleteMatch } = require('../game/matchManager.js');
-const { initializeGameState, processInput, startGameLoop, getGameState, deleteGameState } = require('../game/gameState.js');
+const { initMatchmaking, addToQueue, removeFromQueue } = require('../matchmaking/matchMaking.js');
+const { getMatchBySocket, selectCharacter, lockCharacter, deleteMatch } = require('../matchmaking/matchManager.js');
+const { initializeGameState, processInput, startGameLoop, getGameState, deleteGameState } = require('../core/gameState.js');
 
 const socketHandler = (io)=>{
 
@@ -109,6 +109,31 @@ const socketHandler = (io)=>{
                     console.warn("failed to process input for:", socket.id);
                 }
             });           
+        });
+
+        //rematch logic
+        socket.on('rematchRequest', () => {
+            const { rematchHandler } = require('./rematchHandler.js');
+            const { getMatchBySocket, createMatch, startCharacterSelectTimeout } = require('./matchManager.js');
+                
+            rematchHandler.handleRematchRequest(
+                socket, 
+                io, 
+                getMatchBySocket, 
+                createMatch, 
+                startCharacterSelectTimeout
+            );
+        });
+
+        //main menu button logic
+        socket.on('returnToMenu', () => {
+            const { getMatchBySocket, deleteMatch } = require('./matchManager.js');
+            const match = getMatchBySocket(socket);
+                
+            if (match) {
+                console.log(`[Server] ${socket.id} returning to menu from room ${match.roomId}`);
+                socket.leave(match.roomId);
+            }
         });
 
         //remove players on disconnect

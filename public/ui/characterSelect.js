@@ -1,4 +1,4 @@
-import { socket } from "./socket.js";
+import { socket } from "../core/socket.js";
 
 const grid = document.getElementById("character-grid");
 const lockBtn = document.getElementById("lockBtn");

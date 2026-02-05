@@ -1,6 +1,6 @@
 import { socket } from "./socket.js";
 import { spriteManager } from "./spriteAnimator.js";
-import { characterSpriteConfigs } from "./characterSprites.js";
+import { characterSpriteConfigs } from "../data/characterSprites.js";
 import { animationStateManager } from "./animationStateManager.js";
 
 const canvas = document.getElementById('canvas');

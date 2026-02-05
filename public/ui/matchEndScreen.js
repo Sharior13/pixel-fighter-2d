@@ -1,5 +1,4 @@
-// matchEndScreen.js - Client-side match end screen management
-import { socket } from "./socket.js";
+import { socket, cleanupSocket } from "../core/socket.js";
 
 class MatchEndScreen {
     constructor() {
@@ -8,7 +7,7 @@ class MatchEndScreen {
         this.matchData = null;
         this.createScreenElement();
     }
-    
+
     createScreenElement() {
         // Create the match end screen HTML
         const screen = document.createElement('div');
@@ -66,25 +65,25 @@ class MatchEndScreen {
                 </div>
             </div>
         `;
-        
+
         document.body.appendChild(screen);
         this.screenElement = screen;
-        
+
         // Bind button events
         document.getElementById('rematch-btn').addEventListener('click', () => this.requestRematch());
         document.getElementById('main-menu-btn').addEventListener('click', () => this.returnToMenu());
     }
-    
+
     show(matchData) {
         this.matchData = matchData;
         const { winner, localPlayer, opponent, reason } = matchData;
-        
+
         const isVictory = winner === socket.id;
-        
+
         // Set result text and styling
         const resultText = this.screenElement.querySelector('.result-text');
         const resultContainer = this.screenElement.querySelector('.result-container');
-        
+
         if (isVictory) {
             resultText.textContent = 'VICTORY';
             resultText.classList.add('victory');
@@ -95,37 +94,34 @@ class MatchEndScreen {
             resultText.classList.add('defeat');
             resultContainer.classList.add('defeat');
         }
-        
+
         // Fill in stats
         this.updatePlayerStats('.player1-stats', localPlayer, isVictory);
         this.updatePlayerStats('.player2-stats', opponent, !isVictory);
-        
+
         // Show the screen
         this.screenElement.classList.add('show');
-        
-        // Play K.O. sound effect (if you have one)
-        // this.playSound('ko');
     }
-    
+
     updatePlayerStats(selector, playerData, isWinner) {
         const statsContainer = this.screenElement.querySelector(selector);
-        
+
         if (isWinner) {
             statsContainer.classList.add('winner');
         } else {
             statsContainer.classList.add('loser');
         }
-        
-        statsContainer.querySelector('.player-character').textContent = 
+
+        statsContainer.querySelector('.player-character').textContent =
             playerData.character.toUpperCase();
-        statsContainer.querySelector('.damage-dealt').textContent = 
+        statsContainer.querySelector('.damage-dealt').textContent =
             Math.round(playerData.damage || 0);
-        statsContainer.querySelector('.damage-taken').textContent = 
+        statsContainer.querySelector('.damage-taken').textContent =
             Math.round(playerData.damageReceived || 0);
-        statsContainer.querySelector('.combo-count').textContent = 
+        statsContainer.querySelector('.combo-count').textContent =
             playerData.combo || 0;
     }
-    
+
     createConfetti() {
         // Create victory confetti
         for (let i = 0; i < 50; i++) {
@@ -138,71 +134,80 @@ class MatchEndScreen {
                     Math.floor(Math.random() * 4)
                 ];
                 this.screenElement.appendChild(confetti);
-                
+
                 setTimeout(() => confetti.remove(), 3000);
             }, i * 50);
         }
     }
-    
+
     requestRematch() {
+        if (!socket || this.isWaitingForRematch) {
+            return;
+        }
+
         const rematchBtn = document.getElementById('rematch-btn');
         const waitingText = this.screenElement.querySelector('.waiting-text');
-        
+
         // Disable button and show waiting
         rematchBtn.disabled = true;
         waitingText.style.display = 'block';
         this.isWaitingForRematch = true;
-        
+
         // Send rematch request to server
         socket.emit('rematchRequest');
-        
+
         console.log('[MatchEnd] Rematch requested');
     }
-    
+
     returnToMenu() {
         // Clean up and return to title screen
         this.hide();
-        socket.emit('returnToMenu');
         
+        // Clean up socket connection
+        cleanupSocket();
+
         // Import and call titleScreen
-        import('./main.js').then(({ titleScreen }) => {
+        import('./titleScreen.js').then(({ titleScreen }) => {
             titleScreen();
         });
     }
-    
+
     hide() {
         this.screenElement.classList.remove('show');
         this.isWaitingForRematch = false;
-        
+
         // Reset classes
         const resultText = this.screenElement.querySelector('.result-text');
         const resultContainer = this.screenElement.querySelector('.result-container');
-        
+
         resultText.classList.remove('victory', 'defeat');
         resultContainer.classList.remove('victory', 'defeat');
-        
+
         this.screenElement.querySelectorAll('.player-stats').forEach(stat => {
             stat.classList.remove('winner', 'loser');
         });
-        
+
         // Remove confetti
         this.screenElement.querySelectorAll('.confetti').forEach(c => c.remove());
-        
+
         // Reset buttons
-        document.getElementById('rematch-btn').disabled = false;
+        const rematchBtn = document.getElementById('rematch-btn');
+        if (rematchBtn) {
+            rematchBtn.disabled = false;
+        }
         this.screenElement.querySelector('.waiting-text').style.display = 'none';
     }
-    
+
     handleRematchAccepted() {
         console.log('[MatchEnd] Rematch accepted! Returning to character select...');
         this.hide();
     }
-    
+
     handleRematchDeclined() {
         const waitingText = this.screenElement.querySelector('.waiting-text');
         waitingText.textContent = 'Opponent declined rematch';
         waitingText.style.color = '#FF4444';
-        
+
         setTimeout(() => {
             this.returnToMenu();
         }, 2000);

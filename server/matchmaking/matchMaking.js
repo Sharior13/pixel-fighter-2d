@@ -1,5 +1,5 @@
 const { matches, createMatch, startCharacterSelectTimeout } = require("./matchManager.js");
-const { initializeGameState, startGameLoop } = require("./gameState.js");
+const { initializeGameState, startGameLoop } = require("../core/gameState.js");
 
 const ROOM_ID_CHARS = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 const QUEUE_SIZE = 2;

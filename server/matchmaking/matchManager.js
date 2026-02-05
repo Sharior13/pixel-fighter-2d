@@ -1,6 +1,6 @@
-const { GAME_CONFIG } = require('./gameState.js')
-const { validateCharacter, getRandomCharacter } = require('./characterData.js');
-const { getRandomMap } = require('./maps.js');
+const { GAME_CONFIG } = require('../core/gameState.js')
+const { validateCharacter, getRandomCharacter } = require('../data/characterData.js');
+const { getRandomMap } = require('../data/maps.js');
 
 const matches = new Map();
 const lockTimeouts = new Map();

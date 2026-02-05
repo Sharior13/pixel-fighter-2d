@@ -1036,3 +1036,11 @@ body{
         opacity: 0;
     }
 }
+.cooldown-indicator {
+    position: fixed;
+    left: 20px;
+    top: 100px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}

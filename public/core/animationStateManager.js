@@ -71,18 +71,16 @@ class AnimationStateManager {
         // Priority order: attack animations > movement states > idle
         
         if (player.isAttacking && player.currentAttack) {
-            switch(player.currentAttack) {
-                case 'attack1':
-                    return 'attack1';
-                case 'attack2':
-                    return 'attack2';
-                case 'basic':
-                    return 'attack_basic';
-                case 'special':
-                    return 'attack_special';
-                case 'ultimate':
-                    return 'attack_ultimate';
-            }
+            // Map attack types to animations
+            const attackAnimations = {
+                'attack1': 'attack1',
+                'attack2': 'attack2',
+                'basic': 'attack_basic',
+                'special': 'attack_special',
+                'ultimate': 'attack_ultimate'
+            };
+            
+            return attackAnimations[player.currentAttack] || 'idle';
         }
     
         // Hit/stun state

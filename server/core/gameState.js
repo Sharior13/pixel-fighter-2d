@@ -1,6 +1,6 @@
-const { getCharacterData } = require('./characterData.js');
-const { getMapData } = require('./maps.js');
-const { AttackHandler } = require('./attackHandler.js');
+const { getCharacterData } = require('../data/characterData.js');
+const { getMapData } = require('../data/maps.js');
+const { AttackHandler } = require('./attackSystem.js');
 
 const gameStates = new Map();
 const gameLoopIntervals = new Map();
@@ -99,7 +99,6 @@ const initializeGameState = (roomId, playerData, mapId)=>{
                 isDashing: false,     
                 dashTimer: 0,        
                 dashCooldownTimer: 0,
-                attackTimer: 0, 
                 isBlocking: false,      
                 blockActivatedTime: 0,
                 
@@ -121,8 +120,6 @@ const initializeGameState = (roomId, playerData, mapId)=>{
                     ultimate: 0,
                 },
                 currentAttack: null,
-                attackStartTime: null,
-                attackFrame: 0,
                 
                 //combat stats
                 combo: 0,
@@ -160,15 +157,11 @@ const getGameState = (roomId)=>{
 
 //update cooldown
 const updateCooldowns = (player, deltaTime)=>{
-    if(player.cooldowns.basic > 0){
-        player.cooldowns.basic = Math.max(0, player.cooldowns.basic - deltaTime);
-    }
-    if(player.cooldowns.special > 0){
-        player.cooldowns.special = Math.max(0, player.cooldowns.special - deltaTime);
-    }
-    if(player.cooldowns.ultimate > 0){
-        player.cooldowns.ultimate = Math.max(0, player.cooldowns.ultimate - deltaTime);
-    }
+    Object.keys(player.cooldowns).forEach(key => {
+        if(player.cooldowns[key] > 0){
+            player.cooldowns[key] = Math.max(0, player.cooldowns[key] - deltaTime);
+        }
+    });
 };
 
 
@@ -495,15 +488,6 @@ const gameTick = (roomId, io)=>{
             player.dashCooldownTimer -= deltaTime;
             if(player.dashCooldownTimer <= 0){
                 player.dashCooldownTimer = 0;
-            }
-        }
-
-        //update attack timer 
-        if(player.attackTimer > 0){
-            player.attackTimer -= deltaTime;
-            if(player.attackTimer <= 0){
-                player.attackTimer = 0;
-                player.isAttacking = false;
             }
         }
         
