@@ -8,7 +8,7 @@ const gameLoopIntervals = new Map();
 const GAME_CONFIG = {
     tickRate: 60,
     tickInterval: 1000 / 60,
-    charSelectTimeout: 1000000,
+    charSelectTimeout: 30000,
     matchDuration: 180000,
     gravity: 0.5,
     inputBufferSize: 10,
@@ -72,6 +72,7 @@ const initializeGameState = (roomId, playerData, mapId)=>{
                 socketId: p.socketId,
                 playerIndex: p.playerIndex,
                 character: p.character,
+                username: p.username || "Player", 
 
                 size: {
                     width: 115,
@@ -653,6 +654,7 @@ const getClientGameState = (gameState)=>{
             socketId: p.socketId,
             playerIndex: p.playerIndex,
             character: p.character,
+            username: p.username || "Player",
             size: p.size,
             position: p.position,
             velocity: p.velocity,

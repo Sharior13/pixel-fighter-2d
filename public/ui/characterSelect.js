@@ -24,7 +24,9 @@ const CHARACTERS = [
 const characterSelectState = {
     selectedCharacter: null,
     opponentCharacter: null,
-    locked: false
+    locked: false,
+    timerInterval: null,
+    timeRemaining: 30
 };
 
 //open char select
@@ -34,18 +36,50 @@ const openCharacterSelect = ()=>{
     document.getElementById('p2-label').classList.remove('active');
 
     // Restore character select background
-    canvas.style.backgroundImage = "url('./assets/background/title-bg.gif')";
+    canvas.style.backgroundImage = "url('../assets/background/title-bg.gif')";
 
     characterSelectState.selectedCharacter = null;
     characterSelectState.opponentCharacter = null;
     characterSelectState.locked = false;
+    characterSelectState.timeRemaining = 30;
 
     player1Preview.innerHTML = '<span class="silhouette">?</span>';
     player2Preview.innerHTML = '<span class="silhouette">?</span>';
     statusText.textContent = '';
     lockBtn.disabled = true;
 
+    // Clear any existing timer
+    if (characterSelectState.timerInterval) {
+        clearInterval(characterSelectState.timerInterval);
+    }
+
+    // Start countdown timer
+    startCharacterSelectTimer();
+
     renderCharacterGrid();
+};
+
+// Timer function for character select
+const startCharacterSelectTimer = () => {
+    // Create or update timer display
+    let timerDisplay = document.getElementById('character-timer');
+    characterSelectState.timerInterval = setInterval(()=>{
+        const seconds = characterSelectState.timeRemaining;
+        // Change color based on time remaining
+        if (seconds <= 10) {
+            timerDisplay.style.color = '#FF4444';
+            timerDisplay.style.animation = 'pulse 0.5s ease-in-out infinite';
+        } else if (seconds <= 30) {
+            timerDisplay.style.color = '#FFD700';
+            timerDisplay.style.animation = 'none';
+        } else {
+            timerDisplay.style.color = '#FFF';
+            timerDisplay.style.animation = 'none';
+        }
+
+        timerDisplay.textContent = `${characterSelectState.timeRemaining}`;
+        characterSelectState.timeRemaining--;
+    }, 1000);
 };
 
 //render charcter selection ui

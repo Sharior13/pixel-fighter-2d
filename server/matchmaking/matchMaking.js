@@ -159,6 +159,7 @@ const tryMatch = ()=>{
         roomId: match.roomId,
         players: match.players.map(p => ({
             socketId: p.socketId,
+            username: p.user,
             playerIndex: p.playerIndex
         }))
     });

@@ -2,6 +2,8 @@ import { socket } from "./socket.js";
 import { spriteManager } from "./spriteAnimator.js";
 import { characterSpriteConfigs } from "../data/characterSprites.js";
 import { animationStateManager } from "./animationStateManager.js";
+import { battleUI } from "../ui/battleUI.js";
+import { getPlayerUsername } from "../ui/titleScreen.js";
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
@@ -69,6 +71,9 @@ const updateGameState = (state)=>{
             initializePlayerSprites(player);
         });
     }
+    
+    // Update battle UI with current state
+    battleUI.update(state);
 };
 
 const initializePlayerSprites = (player) => {
@@ -275,68 +280,24 @@ const initializeRender = ()=>{
             );
         }
         
-        //facing indicator 
-        ctx.fillStyle = "rgba(255, 255, 0, 0.5)";
-        const arrowSize = 10;
-        const arrowX = player.facing > 0 ? 
-            player.position.x + player.size.width / 2 + 5 : 
-            player.position.x - player.size.width / 2 - 5 - arrowSize;
-        const arrowY = player.position.y - player.size.height / 2 - arrowSize / 2;
+        // Display player username above character
+        const displayName = player.socketId === socket.id ? getPlayerUsername() : (player.username || player.character.charAt(0).toUpperCase() + player.character.slice(1));
         
-        ctx.beginPath();
-        if(player.facing > 0){
-            ctx.moveTo(arrowX, arrowY);
-            ctx.lineTo(arrowX + arrowSize, arrowY + arrowSize / 2);
-            ctx.lineTo(arrowX, arrowY + arrowSize);
-        }
-        else{
-            ctx.moveTo(arrowX + arrowSize, arrowY);
-            ctx.lineTo(arrowX, arrowY + arrowSize / 2);
-            ctx.lineTo(arrowX + arrowSize, arrowY + arrowSize);
-        }
-        ctx.closePath();
-        ctx.fill();
-        
-        //character name
         ctx.fillStyle = "white";
         ctx.font = "bold 14px Arial";
         ctx.textAlign = "center";
         ctx.strokeStyle = "black";
         ctx.lineWidth = 3;
         ctx.strokeText(
-            player.character, 
+            displayName, 
             player.position.x, 
-            player.position.y - player.size.height - 35
+            player.position.y - player.size.height + 5
         );
         ctx.fillText(
-            player.character, 
+            displayName, 
             player.position.x, 
-            player.position.y - player.size.height - 35
+            player.position.y - player.size.height + 5
         );
-    };
-    
-    const drawHealthBar = (player)=>{
-        const barWidth = player.size.width;
-        const barHeight = 8;
-        const x = player.position.x - barWidth / 2;
-        const y = player.position.y - player.size.height - 10;
-        
-        //background
-        ctx.fillStyle = "black"; 
-        ctx.fillRect(x - 2, y - 2, barWidth + 4, barHeight + 4);
-
-        ctx.fillStyle = "red";
-        ctx.fillRect(x, y, barWidth, barHeight);
-        
-        //health
-        const healthWidth = (player.health / player.maxHealth) * barWidth;
-        ctx.fillStyle = "green";
-        ctx.fillRect(x, y, healthWidth, barHeight);
-
-        //border
-        ctx.strokeStyle = "white";
-        ctx.lineWidth = 1;
-        ctx.strokeRect(x, y, barWidth, barHeight);
     };
     
     const drawCooldowns = (player) => {
@@ -389,48 +350,6 @@ const initializeRender = ()=>{
         });
     };
     
-    const drawHUD = () => {
-        if(!currentGameState){
-            return;
-        }
-        
-        //map name
-        if(currentMap){
-            ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-            ctx.fillRect(canvas.width / 2 - 100, 10, 200, 40);
-            
-            ctx.fillStyle = "white";
-            ctx.font = "bold 16px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText(currentMap.name, canvas.width / 2, 25);
-            
-            //time remaining
-            const timeLeft = Math.ceil(currentGameState.timeRemaining / 1000);
-            ctx.font = "14px Arial";
-            ctx.fillText(`Time: ${timeLeft}s`, canvas.width / 2, 42);
-        }
-        
-        //player scores
-        currentGameState.players.forEach((player, index) => {
-            const isLeft = index === 0;
-            const x = isLeft ? 20 : canvas.width - 220;
-            const y = 20;
-            
-            ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-            ctx.fillRect(x, y, 200, 60);
-            
-            ctx.fillStyle = player.socketId === socket.id ? "#4A90E2" : "#E24A4A";
-            ctx.font = "bold 14px Arial";
-            ctx.textAlign = "left";
-            ctx.fillText(player.character, x + 10, y + 20);
-            
-            ctx.fillStyle = "white";
-            ctx.font = "12px Arial";
-            ctx.fillText(`HP: ${player.health}/${player.maxHealth}`, x + 10, y + 40);
-            ctx.fillText(`Combo: ${player.combo}`, x + 10, y + 55);
-        });
-    };
-    
     const animate = (currentTime) => {
         if(!isRendering){
             return;
@@ -459,19 +378,14 @@ const initializeRender = ()=>{
         currentGameState.players.forEach(player=>{
             //draw player sprite with animation
             drawPlayer(player, deltaTime);
-            
-            //draw health bar
-            drawHealthBar(player);
         });
         
         ctx.restore();
         
-        currentGameState.players.forEach(player=>{
-            //draw cooldown indicators
-            drawCooldowns(player);
-        });
-        
-        drawHUD();
+        // currentGameState.players.forEach(player=>{
+        //     //draw cooldown indicators
+        //     drawCooldowns(player);
+        // });
         
         //for debug
         // drawGround();

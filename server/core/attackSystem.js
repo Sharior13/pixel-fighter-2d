@@ -34,7 +34,7 @@ const ATTACK_CONFIG = {
             duration: 1200,
             knockback: { x: 40, y: 0 },
             animation: 'attack_ultimate',
-            dashDistance: 300
+            dashDistance: 0
         }
     },
     
@@ -112,7 +112,7 @@ const ATTACK_CONFIG = {
             duration: 720,
             knockback: { x: 45, y: 0 },
             animation: 'attack_ultimate',
-            dashDistance: 300
+            dashDistance: 500
         }
     },
     
@@ -229,7 +229,7 @@ const ATTACK_CONFIG = {
             duration: 720,
             knockback: { x: 55, y: 0 },
             animation: 'attack_ultimate',
-            dashDistance: 300
+            dashDistance: 400
         }
     },
 
@@ -268,7 +268,7 @@ const ATTACK_CONFIG = {
             duration: 720,
             knockback: { x: 55, y: 0 },
             animation: 'attack_ultimate',
-            dashDistance: 300
+            dashDistance: 400
         }
     },
 };
@@ -342,15 +342,16 @@ class AttackHandler {
             
             const elapsed = Date.now() - attackData.startTime;
             
+            // Check for hit (only once per attack)
+            if (!attackData.hasHit && elapsed >= 100 && elapsed < attackData.config.duration - 100) {
+                this.checkHit(gameState, attacker, attackData);
+            }
+
             // Handle ultimate dash
             if (attackData.config.dashDistance && !attackData.dashComplete && elapsed < attackData.config.duration * 0.5) {
                 this.handleUltimateDash(attacker, attackData, deltaTime, gameState);
             }
             
-            // Check for hit (only once per attack)
-            if (!attackData.hasHit && elapsed >= 100 && elapsed < attackData.config.duration - 100) {
-                this.checkHit(gameState, attacker, attackData);
-            }
             
             // Check if attack is complete
             if (elapsed >= attackData.config.duration) {

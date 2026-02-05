@@ -1,8 +1,9 @@
 import { openCharacterSelect, showOpponentPreview } from "../ui/characterSelect.js";
 import { keys, actionTriggered } from "./input.js";
-import { titleScreen } from "../ui/titleScreen.js";
+import { titleScreenUI } from "../ui/titleScreen.js";
 import { initializeRender, stopRender, setMap, updateGameState } from "./render.js";
 import { matchEndScreen } from "../ui/matchEndScreen.js";
+import { battleUI } from "../ui/battleUI.js";
 
 let socket = null;
 let inMatch = false;
@@ -15,13 +16,15 @@ const initializeSocket = (mode, roomId) => {
 
     socket = io();
 
+    const username = titleScreenUI.getUsername();
+    console.log('[Socket] Sending username:', username);
     // Start match process
     if (mode === "quickStart") {
-        socket.emit("findMatch", mode, roomId);
+        socket.emit("findMatch", mode, roomId, username);
     } else if (mode === "createCustomRoom") {
-        socket.emit("createCustomRoom");
+        socket.emit("createCustomRoom", username);
     } else if (mode === "joinCustomRoom") {
-        socket.emit("joinCustomRoom", roomId);
+        socket.emit("joinCustomRoom", roomId, username);
     }
 
     socket.on("queueJoined", () => {
@@ -50,7 +53,7 @@ const initializeSocket = (mode, roomId) => {
         document.getElementById("queuing").classList.add("hidden");
         cleanupSocket();
         stopRender();
-        titleScreen();
+        titleScreenUI.showTitleScreen();
     });
 
     socket.on("matchFound", ({ roomId, playerIndex }) => {
@@ -82,6 +85,7 @@ const initializeSocket = (mode, roomId) => {
         canvas.style.backgroundImage = 'none';
 
         setMap(gameState.map);
+        battleUI.initialize(gameState);
         initializeRender();
     });
 
@@ -96,6 +100,9 @@ const initializeSocket = (mode, roomId) => {
 
         // Stop game loop
         stopRender();
+        
+        // Hide battle UI
+        battleUI.hide();
 
         // Show match end screen with stats
         const localPlayer = finalStats.find(p => p.socketId === socket.id);
@@ -135,7 +142,7 @@ const initializeSocket = (mode, roomId) => {
         document.getElementById("character-select").style.display = "none";
         cleanupSocket();
         stopRender();
-        titleScreen();
+        titleScreenUI.showTitleScreen();
     });
 
     // Send input to backend

@@ -1,6 +1,6 @@
 const { initMatchmaking, addToQueue, removeFromQueue, createCustomRoom, joinCustomRoom } = require('../matchmaking/matchMaking.js');
 const { getMatchBySocket, selectCharacter, lockCharacter, deleteMatch } = require('../matchmaking/matchManager.js');
-const { initializeGameState, processInput, startGameLoop, getGameState, deleteGameState } = require('../core/gameState.js');
+const { initializeGameState, processInput, startGameLoop, getGameState, deleteGameState, GAME_CONFIG } = require('../core/gameState.js');
 const { handleRematchRequest, handleRematchDecline, clearRematchRequests } = require('../matchmaking/rematchHandler.js');
 
 const socketHandler = (io)=>{
@@ -11,15 +11,19 @@ const socketHandler = (io)=>{
         console.log("player connected");
         
         //start match process when player presses quick play or custom room
-        socket.on("findMatch", (mode, roomId)=>{
+        socket.on("findMatch", (mode, roomId, username)=>{
             if(mode === "quickStart"){
+                // Store username on socket for later use
+                socket.username = username || "Player";
                 addToQueue(socket);
                 socket.emit("queueJoined");
             }
         });
 
         //create custom room
-        socket.on("createCustomRoom", () => {
+        socket.on("createCustomRoom", (username) => {
+            // Store username on socket for later use
+            socket.username = username || "Player";
             const result = createCustomRoom(socket);
             if (result && result.roomId) {
                 socket.emit("customRoomCreated", { roomId: result.roomId });
@@ -30,7 +34,9 @@ const socketHandler = (io)=>{
         });
 
         //join custom room
-        socket.on("joinCustomRoom", (roomId) => {
+        socket.on("joinCustomRoom", (roomId, username) => {
+            // Store username on socket for later use
+            socket.username = username || "Player";
             const result = joinCustomRoom(socket, roomId);
             if (result && result.error) {
                 socket.emit("customRoomError", { message: result.error });
@@ -79,18 +85,30 @@ const socketHandler = (io)=>{
                 
                 //initialize server-authoritative game state
                 try{
-                    const gameState = initializeGameState(fightData.roomId, fightData.players, fightData.mapId);
+                    // Add usernames to player data
+                    const playersWithUsernames = fightData.players.map(p => {
+                        const playerSocket = io.sockets.sockets.get(p.socketId);
+                        const username = playerSocket?.username || "Player";
+                        console.log(`[SocketHandler] Player ${p.socketId} username: "${username}"`);
+                        return {
+                            ...p,
+                            username: username
+                        };
+                    });
+                    
+                    const gameState = initializeGameState(fightData.roomId, playersWithUsernames, fightData.mapId);
                     
                     //emit startMatch with initial game state
                     io.to(fightData.roomId).emit("startMatch", {
                         roomId: fightData.roomId,
-                        players: fightData.players,
+                        players: playersWithUsernames,
                         map: gameState.map,
                         gameState: {
                             players: gameState.players.map(p => ({
                                 socketId: p.socketId,
                                 playerIndex: p.playerIndex,
                                 character: p.character,
+                                username: p.username,
                                 position: p.position,
                                 health: p.health,
                                 maxHealth: p.maxHealth
@@ -191,6 +209,7 @@ const socketHandler = (io)=>{
                     if(remainingPlayer){
                         io.to(match.roomId).emit("matchEnd", {
                             winner: remainingPlayer.socketId,
+                            finalStats: gameState.players,
                             reason: "opponent_disconnected"
                         });
                     }
