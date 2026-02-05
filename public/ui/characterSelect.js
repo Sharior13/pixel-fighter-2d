@@ -9,9 +9,16 @@ const statusText = document.getElementById("statusText");
 //temporary
 const CHARACTERS = [
   { id: "luffy", name: "Luffy", image:'../assets/characters/luffy/luffy.gif' },
-  { id: "naruto", name: "Naruto", image:'../assets/characters/naruto/naruto.gif' },
   { id: "zoro", name: "Zoro", image:'../assets/characters/zoro/zoro.gif' },
-  { id: "kakashi", name: "Kakashi", image:'../assets/characters/kakashi/kakashi.gif' }
+  { id: "naruto", name: "Naruto", image:'../assets/characters/naruto/naruto.gif' },
+  { id: "sasuke", name: "Sasuke", image:'../assets/characters/sasuke/sasuke.gif' },
+  { id: "kakashi", name: "Kakashi", image:'../assets/characters/kakashi/kakashi.gif' },
+  { id: "ichigo", name: "Ichigo", image:'../assets/characters/ichigo/ichigo.gif' },
+  { id: "rukia", name: "Rukia", image:'../assets/characters/rukia/rukia.gif' },
+  { id: "s1", name: "s1", image:'../assets/characters/others/s1.gif', locked: true },
+  { id: "s2", name: "s2", image:'../assets/characters/others/s2.gif', locked: true },
+  { id: "s3", name: "s3", image:'../assets/characters/others/s3.gif', locked: true },
+  { id: "s4", name: "s4", image:'../assets/characters/others/s4.gif', locked: true },
 ];
 const characterSelectState = {
     selectedCharacter: null,
@@ -53,6 +60,10 @@ const renderCharacterGrid = ()=>{
         }
         else {
             slot.textContent = char.name;
+        }
+
+        if(char.locked){
+          slot.classList.add('locked');
         }
     
         slot.onclick = ()=>{

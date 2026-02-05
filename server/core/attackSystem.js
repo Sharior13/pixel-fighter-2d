@@ -4,37 +4,37 @@ const ATTACK_CONFIG = {
             damage: 8,
             cooldown: 400,
             duration: 560,
-            knockback: { x: 8, y: -3 },
+            knockback: { x: 8, y: 0 },
             animation: 'attack1'
         },
         attack2: {
             damage: 12,
             cooldown: 600,
             duration: 640,
-            knockback: { x: 12, y: -5 },
+            knockback: { x: 12, y: 0 },
             animation: 'attack2'
         },
         basic: {
             damage: 15,
             cooldown: 1000,
             duration: 300,
-            knockback: { x: 10, y: -4 },
+            knockback: { x: 10, y: 0 },
             animation: 'attack_basic'
         },
         special: {
             damage: 35,
             cooldown: 6000,
             duration: 900,
-            knockback: { x: 20, y: -8 },
+            knockback: { x: 20, y: 0 },
             animation: 'attack_special'
         },
         ultimate: {
             damage: 60,
             cooldown: 25000,
             duration: 1200,
-            knockback: { x: 40, y: -15 },
+            knockback: { x: 40, y: 0 },
             animation: 'attack_ultimate',
-            dashDistance: 120 // Character-specific dash distance
+            dashDistance: 300
         }
     },
     
@@ -43,37 +43,37 @@ const ATTACK_CONFIG = {
             damage: 10,
             cooldown: 450,
             duration: 480,
-            knockback: { x: 10, y: -4 },
+            knockback: { x: 10, y: 0 },
             animation: 'attack1'
         },
         attack2: {
             damage: 14,
             cooldown: 650,
             duration: 720,
-            knockback: { x: 8, y: -8 },
+            knockback: { x: 8, y: 0 },
             animation: 'attack2'
         },
         basic: {
             damage: 18,
             cooldown: 1200,
             duration: 600,
-            knockback: { x: 12, y: -5 },
+            knockback: { x: 12, y: 0 },
             animation: 'attack_basic'
         },
         special: {
             damage: 40,
             cooldown: 7000,
             duration: 1200,
-            knockback: { x: 25, y: -10 },
+            knockback: { x: 25, y: 0 },
             animation: 'attack_special'
         },
         ultimate: {
             damage: 70,
             cooldown: 30000,
             duration: 1200,
-            knockback: { x: 50, y: -20 },
+            knockback: { x: 50, y: 0 },
             animation: 'attack_ultimate',
-            dashDistance: 150 // Longer dash for Zoro
+            dashDistance: 500
         }
     },
     
@@ -82,37 +82,37 @@ const ATTACK_CONFIG = {
             damage: 9,
             cooldown: 420,
             duration: 480,
-            knockback: { x: 7, y: -3 },
+            knockback: { x: 7, y: 0 },
             animation: 'attack1'
         },
         attack2: {
             damage: 11,
             cooldown: 580,
             duration: 640,
-            knockback: { x: 9, y: -4 },
+            knockback: { x: 9, y: 0 },
             animation: 'attack2'
         },
         basic: {
             damage: 16,
             cooldown: 1100,
             duration: 480,
-            knockback: { x: 15, y: -6 },
+            knockback: { x: 15, y: 0 },
             animation: 'attack_basic'
         },
         special: {
             damage: 38,
             cooldown: 6500,
             duration: 600,
-            knockback: { x: 22, y: -9 },
+            knockback: { x: 22, y: 0 },
             animation: 'attack_special'
         },
         ultimate: {
             damage: 65,
             cooldown: 28000,
             duration: 720,
-            knockback: { x: 45, y: -18 },
+            knockback: { x: 45, y: 0 },
             animation: 'attack_ultimate',
-            dashDistance: 100 // Moderate dash for Naruto
+            dashDistance: 300
         }
     },
     
@@ -121,39 +121,156 @@ const ATTACK_CONFIG = {
             damage: 9,
             cooldown: 430,
             duration: 480,
-            knockback: { x: 8, y: -3 },
+            knockback: { x: 8, y: 0 },
             animation: 'attack1'
         },
         attack2: {
             damage: 11,
             cooldown: 600,
             duration: 640,
-            knockback: { x: 10, y: -4 },
+            knockback: { x: 10, y: 0 },
             animation: 'attack2'
         },
         basic: {
             damage: 17,
             cooldown: 1150,
             duration: 480,
-            knockback: { x: 14, y: -5 },
+            knockback: { x: 14, y: 0 },
             animation: 'attack_basic'
         },
         special: {
             damage: 42,
             cooldown: 8000,
             duration: 600,
-            knockback: { x: 28, y: -12 },
+            knockback: { x: 28, y: 0 },
             animation: 'attack_special'
         },
         ultimate: {
             damage: 75,
             cooldown: 35000,
             duration: 720,
-            knockback: { x: 55, y: -22 },
+            knockback: { x: 55, y: 0 },
             animation: 'attack_ultimate',
-            dashDistance: 130 // Long-range dash for Kakashi
+            dashDistance: 500
         }
-    }
+    },
+
+    sasuke: {
+        attack1: {
+            damage: 9,
+            cooldown: 430,
+            duration: 480,
+            knockback: { x: 8, y: 0 },
+            animation: 'attack1'
+        },
+        attack2: {
+            damage: 11,
+            cooldown: 600,
+            duration: 640,
+            knockback: { x: 10, y: 0 },
+            animation: 'attack2'
+        },
+        basic: {
+            damage: 17,
+            cooldown: 1150,
+            duration: 480,
+            knockback: { x: 14, y: 0 },
+            animation: 'attack_basic'
+        },
+        special: {
+            damage: 42,
+            cooldown: 8000,
+            duration: 600,
+            knockback: { x: 28, y: 0 },
+            animation: 'attack_special'
+        },
+        ultimate: {
+            damage: 75,
+            cooldown: 35000,
+            duration: 720,
+            knockback: { x: 55, y: 0 },
+            animation: 'attack_ultimate',
+            dashDistance: 500
+        }
+    },
+
+    ichigo: {
+        attack1: {
+            damage: 9,
+            cooldown: 430,
+            duration: 480,
+            knockback: { x: 8, y: 0 },
+            animation: 'attack1'
+        },
+        attack2: {
+            damage: 11,
+            cooldown: 600,
+            duration: 640,
+            knockback: { x: 10, y: 0 },
+            animation: 'attack2'
+        },
+        basic: {
+            damage: 17,
+            cooldown: 1150,
+            duration: 480,
+            knockback: { x: 14, y: 0 },
+            animation: 'attack_basic'
+        },
+        special: {
+            damage: 42,
+            cooldown: 8000,
+            duration: 600,
+            knockback: { x: 28, y: 0 },
+            animation: 'attack_special'
+        },
+        ultimate: {
+            damage: 75,
+            cooldown: 35000,
+            duration: 720,
+            knockback: { x: 55, y: 0 },
+            animation: 'attack_ultimate',
+            dashDistance: 300
+        }
+    },
+
+    rukia: {
+        attack1: {
+            damage: 9,
+            cooldown: 430,
+            duration: 480,
+            knockback: { x: 8, y: 0 },
+            animation: 'attack1'
+        },
+        attack2: {
+            damage: 11,
+            cooldown: 600,
+            duration: 640,
+            knockback: { x: 10, y: 0 },
+            animation: 'attack2'
+        },
+        basic: {
+            damage: 17,
+            cooldown: 1150,
+            duration: 480,
+            knockback: { x: 14, y: 0 },
+            animation: 'attack_basic'
+        },
+        special: {
+            damage: 42,
+            cooldown: 8000,
+            duration: 600,
+            knockback: { x: 28, y: 0 },
+            animation: 'attack_special'
+        },
+        ultimate: {
+            damage: 75,
+            cooldown: 35000,
+            duration: 720,
+            knockback: { x: 55, y: 0 },
+            animation: 'attack_ultimate',
+            dashDistance: 300
+        }
+    },
 };
 
 class AttackHandler {

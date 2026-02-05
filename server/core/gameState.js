@@ -13,7 +13,7 @@ const GAME_CONFIG = {
     gravity: 0.5,
     inputBufferSize: 10,
     dash:{
-        speed: 5,
+        speed: 6,
         duration: 200, 
         cooldown: 1000,
     },
@@ -202,7 +202,7 @@ const processInput = (roomId, socketId, input)=>{
 };
 
 //apply to player movement
-const applyMovement = (player, direction, deltaTime, mapBoundaries)=>{
+const applyMovement = (player, players, direction, deltaTime, mapBoundaries)=>{
     if(player.isStunned || player.isAttacking){
         return;
     }
@@ -229,6 +229,49 @@ const applyMovement = (player, direction, deltaTime, mapBoundaries)=>{
     //update position
     player.position.x += player.velocity.x;
     
+    //player-to-player collision detection
+    players.forEach(p2 => {
+        if (p2.socketId === player.socketId) {
+            return;
+        }
+        
+        // Calculate overlap
+        const dx = player.position.x - p2.position.x;
+        const combinedHalfWidth = (player.size.width + p2.size.width) / 2;
+        
+        // Check if players are overlapping horizontally
+        if (Math.abs(dx) < combinedHalfWidth) {
+            // Check vertical overlap
+            const dy = player.position.y - p2.position.y;
+            const combinedHalfHeight = (player.size.height + p2.size.height) / 2;
+            
+            if (Math.abs(dy) < combinedHalfHeight) {
+                // Players are colliding - push them apart
+                const overlapX = combinedHalfWidth - Math.abs(dx);
+                
+                // Push players apart based on direction
+                if (dx > 0) {
+                    // player is to the right of p2
+                    player.position.x += overlapX / 2;
+                    p2.position.x -= overlapX / 2;
+                } else {
+                    // player is to the left of p2
+                    player.position.x -= overlapX / 2;
+                    p2.position.x += overlapX / 2;
+                }
+                
+                // Immediately clamp both players to boundaries after pushing
+                const leftBound = mapBoundaries.left + player.size.width / 2;
+                const rightBound = mapBoundaries.right - player.size.width / 2;
+                const leftBound2 = mapBoundaries.left + p2.size.width / 2;
+                const rightBound2 = mapBoundaries.right - p2.size.width / 2;
+                
+                player.position.x = Math.max(leftBound, Math.min(rightBound, player.position.x));
+                p2.position.x = Math.max(leftBound2, Math.min(rightBound2, p2.position.x));
+            }
+        }
+    });
+
     //ensure player stays within map boundary
     const leftBound = mapBoundaries.left + player.size.width / 2;
     const rightBound = mapBoundaries.right - player.size.width / 2;
@@ -291,99 +334,6 @@ const applyBlock = (player, activate) => {
             console.log(`[GameState] Player ${player.socketId} stopped blocking`);
         }
     }
-};
-
-
-const executeAbility = (gameState, player, abilityName)=>{
-    const ability = player.abilities[abilityName];
-    
-    if(!ability){
-        return { success: false, reason: 'invalid_ability' };
-    }
-    
-    //cooldown check
-    if(player.cooldowns[abilityName] > 0){
-        return { success: false, reason: 'on_cooldown' };
-    }
-    
-    //check if player can attack
-    if(player.isStunned || player.isAttacking){
-        return { success: false, reason: 'cannot_attack' };
-    }
-    
-    //set cooldown
-    player.cooldowns[abilityName] = ability.cooldown;
-    player.isAttacking = true;
-    player.attackTimer = ability.duration || 300;
-    
-    //apply ability effects
-    const hits = gameState.players
-    .filter(target => target.socketId !== player.socketId && !target.isDead)
-    .map(target=>{
-        //hitbox checking
-        const distance = Math.abs(player.position.x - target.position.x);
-        const isInRange = distance <= ability.range;
-        
-        //direction check
-        const isFacingTarget = (player.facing === 1 && target.position.x > player.position.x) ||
-                              (player.facing === -1 && target.position.x < player.position.x);
-        
-        if(!isInRange || !isFacingTarget){
-            return null;
-        }
-        
-        let damage = ability.damage;
-        
-        //block logic
-        if(target.isBlocking){
-            const blockTime = Date.now() - target.blockActivatedTime;
-            const isPerfectBlock = blockTime <= GAME_CONFIG.block.perfectWindow;
-            
-            if(isPerfectBlock){
-                damage *= (1 - GAME_CONFIG.block.perfectReduction);
-                console.log(`[GameState] Perfect block! Damage reduced to ${damage}`);
-            } else {
-                damage *= (1 - GAME_CONFIG.block.damageReduction);
-            }
-        }
-        
-        target.health -= damage;
-        target.damageReceived += damage;
-        
-        //knockback
-        if(ability.knockback){
-            target.velocity.x = player.facing * ability.knockback.x;
-            target.velocity.y = -ability.knockback.y;
-            target.isGrounded = false;
-        }
-        
-        //check if player died
-        if(target.health <= 0){
-            target.health = 0;
-            target.isDead = true;
-            player.killCount++;
-        }
-        
-        player.damage += ability.damage;
-        player.combo++;
-        
-        return {
-            targetSocketId: target.socketId,
-            damage: ability.damage,
-            knockback: ability.knockback,
-            healthRemaining: target.health
-        };
-    });
-    //reset state after ability
-    setTimeout(()=>{
-        player.isAttacking = false;
-    }, ability.duration || 300);
-    
-    return {
-        success: true,
-        abilityId: ability.id,
-        hits
-    };
 };
 
 //main game loop update
@@ -509,7 +459,7 @@ const gameTick = (roomId, io)=>{
 
         //apply latest movement
         if(latestMovement){
-            applyMovement(player, latestMovement.direction, deltaTime, gameState.map.boundaries);
+            applyMovement(player, gameState.players, latestMovement.direction, deltaTime, gameState.map.boundaries);
             player.currentDirection = latestMovement.direction;
         }
 
