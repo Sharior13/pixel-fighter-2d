@@ -91,11 +91,15 @@ const initializeGameState = (roomId, playerData, mapId)=>{
                 facing: index === 0 ? 1 : -1,
                 currentDirection: 0,
                 
+                //state management
+                state: 'active', // Can be: 'active', 'stunned', 'victory', 'defeated'
+                
                 //flags
                 isGrounded: false,
                 isJumping: false,
                 isAttacking: false,
                 isStunned: false,
+                stunEndTime: 0,
                 isDead: false,
                 isDashing: false,     
                 dashTimer: 0,        
@@ -205,6 +209,7 @@ const processInput = (roomId, socketId, input)=>{
 //apply to player movement
 const applyMovement = (player, players, direction, deltaTime, mapBoundaries)=>{
     if(player.isStunned || player.isAttacking){
+        player.velocity.x = 0; // Clear horizontal velocity while stunned
         return;
     }
     
@@ -281,7 +286,7 @@ const applyMovement = (player, players, direction, deltaTime, mapBoundaries)=>{
 
 
 const applyJump = (player)=>{
-    if(player.isGrounded && !player.isStunned && !player.isAttacking){
+    if(player.isGrounded && !player.isJumping && !player.isStunned && !player.isAttacking){
         player.velocity.y = -player.jumpForce;
         player.isGrounded = false;
         player.isJumping = true;
@@ -420,8 +425,12 @@ const gameTick = (roomId, io)=>{
                 }
             }
         });
-        if (player.isStunned && Date.now() >= player.stunEndTime) {
-        player.isStunned = false;
+        if (player.isStunned && player.stunEndTime && currentTime >= player.stunEndTime) {
+            player.isStunned = false;
+            player.stunEndTime = 0;
+            player.state = 'active';
+            player.velocity.x = 0; // Clear velocity to prevent walk animation
+            console.log(`[GameState] ${player.socketId} stun ended`);
         }
         //update cooldowns
         updateCooldowns(player, deltaTime);
@@ -462,6 +471,10 @@ const gameTick = (roomId, io)=>{
         if(latestMovement){
             applyMovement(player, gameState.players, latestMovement.direction, deltaTime, gameState.map.boundaries);
             player.currentDirection = latestMovement.direction;
+        } else {
+            if (player.isStunned && !player.isAttacking) {
+                player.velocity.x = 0;
+            }
         }
 
         //process all other inputs
@@ -502,16 +515,21 @@ const gameTick = (roomId, io)=>{
     const matchEndCheck = checkMatchEnd(gameState);
 
     if (matchEndCheck.gameEnded) {
+        gameState.phase = "ENDED";
+        
+        if (gameLoopIntervals.has(roomId)) {
+            clearInterval(gameLoopIntervals.get(roomId));
+            gameLoopIntervals.delete(roomId);
+        }
+        
+        io.to(roomId).emit('knockoutAnimation', {
+            winner: matchEndCheck.winner
+        });
+        
         // Play victory/defeat animations for 3 seconds before ending
         const animationDuration = 3000;
         
         setTimeout(() => {
-            // Stop game loop
-            if (gameLoopIntervals.has(roomId)) {
-                clearInterval(gameLoopIntervals.get(roomId));
-                gameLoopIntervals.delete(roomId);
-            }
-            
             // Send final game state with animations
             io.to(roomId).emit('gameStateUpdate', {
                 players: gameState.players.map(p => ({
@@ -669,6 +687,7 @@ const getClientGameState = (gameState)=>{
             isDashing: p.isDashing, 
             isStunned: p.isStunned,
             isDead: p.isDead,
+            state: p.state || 'active', // FIXED: Include state for animations
             cooldowns: p.cooldowns,
             combo: p.combo
         })),

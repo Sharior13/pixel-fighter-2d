@@ -23,6 +23,11 @@ let currentMap = null;
 let bgImg = null;
 let lastFrameTime = performance.now();
 
+// FIXED: Add KO overlay state
+let showKOOverlay = false;
+let koAnimationStartTime = 0;
+const KO_DISPLAY_DURATION = 2000; // Show KO for 2 seconds
+
 const camera = {
     x: 0,
     y: 0
@@ -96,6 +101,13 @@ const initializePlayerSprites = (player) => {
     }
 };
 
+// FIXED: Add KO animation trigger handler
+const triggerKOAnimation = () => {
+    showKOOverlay = true;
+    koAnimationStartTime = performance.now();
+    console.log('[Render] KO animation triggered');
+};
+
 const stopRender = ()=>{
     if(animationFrameId){
         cancelAnimationFrame(animationFrameId);
@@ -104,6 +116,10 @@ const stopRender = ()=>{
     isRendering = false;
     currentGameState = null;
     currentMap = null;
+    
+    // FIXED: Reset KO overlay
+    showKOOverlay = false;
+    koAnimationStartTime = 0;
 
     if(bgImg){
         bgImg.remove();
@@ -239,6 +255,12 @@ const initializeRender = ()=>{
     };
     
     const drawPlayer = (player, deltaTime)=>{
+        // FIXED: Defensive check for player data
+        if (!player || !player.position || !player.size) {
+            console.warn('[Render] Invalid player data, skipping draw');
+            return;
+        }
+        
         // Update and draw sprite animation
         const animator = animationStateManager.getPlayerAnimator(player.socketId);
         
@@ -247,12 +269,11 @@ const initializeRender = ()=>{
             animationStateManager.updatePlayerAnimation(player, deltaTime);
             
             // Get character config for scale
-            const characterId = player.character.toLowerCase();
+            const characterId = player.character?.toLowerCase();
             const config = characterSpriteConfigs[characterId];
             const scale = config?.scale || 2.5;
             
-            //hitbox
-
+            //hitbox (debug)
             // ctx.fillStyle = player.socketId === socket.id ? "blue" : "red";
             // ctx.fillRect(
             //     player.position.x - player.size.width/2, 
@@ -281,7 +302,7 @@ const initializeRender = ()=>{
         }
         
         // Display player username above character
-        const displayName = player.socketId === socket.id ? getPlayerUsername() : (player.username || player.character.charAt(0).toUpperCase() + player.character.slice(1));
+        const displayName = player.socketId === socket.id ? getPlayerUsername() : (player.username || player.character?.charAt(0).toUpperCase() + player.character?.slice(1) || 'Player');
         
         ctx.fillStyle = "white";
         ctx.font = "bold 14px Arial";
@@ -350,6 +371,55 @@ const initializeRender = ()=>{
         });
     };
     
+    // FIXED: Add KO overlay drawing function
+    const drawKOOverlay = (currentTime) => {
+        if (!showKOOverlay) return;
+        
+        const elapsed = currentTime - koAnimationStartTime;
+        
+        // Hide KO after duration
+        if (elapsed > KO_DISPLAY_DURATION) {
+            showKOOverlay = false;
+            return;
+        }
+        
+        // Animation progress (0 to 1)
+        const progress = Math.min(elapsed / KO_DISPLAY_DURATION, 1);
+        
+        // Darken background
+        ctx.fillStyle = `rgba(0, 0, 0, ${0.7 * (1 - progress * 0.5)})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Calculate scale and opacity for KO text
+        const scalePhase1 = Math.min(elapsed / 300, 1); // Scale in over 300ms
+        const fadePhase = Math.max(0, (elapsed - 1500) / 500); // Fade out last 500ms
+        
+        const scale = 1 + scalePhase1 * 0.5;
+        const opacity = 1 - fadePhase;
+        
+        // Draw "KO" text
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.scale(scale, scale);
+        
+        // Outer glow
+        ctx.shadowColor = '#FF0000';
+        ctx.shadowBlur = 30;
+        
+        // Main text
+        ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+        ctx.strokeStyle = `rgba(255, 0, 0, ${opacity})`;
+        ctx.lineWidth = 8;
+        ctx.font = 'bold 120px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        ctx.strokeText('K.O.', 0, 0);
+        ctx.fillText('K.O.', 0, 0);
+        
+        ctx.restore();
+    };
+    
     const animate = (currentTime) => {
         if(!isRendering){
             return;
@@ -365,8 +435,13 @@ const initializeRender = ()=>{
         if(!currentGameState || !currentGameState.players){
             return;
         }
-
-        updateCamera();
+        
+        // FIXED: Don't update camera if game has ended
+        const gameEnded = showKOOverlay || (currentGameState.players && currentGameState.players.some(p => p.state === 'victory' || p.state === 'defeated'));
+        
+        if (!gameEnded) {
+            updateCamera();
+        }
 
         drawBackground();
         
@@ -382,6 +457,8 @@ const initializeRender = ()=>{
         
         ctx.restore();
         
+        drawKOOverlay(currentTime);
+        
         // currentGameState.players.forEach(player=>{
         //     //draw cooldown indicators
         //     drawCooldowns(player);
@@ -395,4 +472,4 @@ const initializeRender = ()=>{
     animate(lastFrameTime);
 };
 
-export { initializeRender, stopRender, setMap, updateGameState, canvas };
+export { initializeRender, stopRender, setMap, updateGameState, triggerKOAnimation, canvas };

@@ -1,7 +1,7 @@
 import { openCharacterSelect, showOpponentPreview } from "../ui/characterSelect.js";
 import { keys, actionTriggered } from "./input.js";
 import { titleScreenUI } from "../ui/titleScreen.js";
-import { initializeRender, stopRender, setMap, updateGameState } from "./render.js";
+import { initializeRender, stopRender, setMap, updateGameState, triggerKOAnimation  } from "./render.js";
 import { matchEndScreen } from "../ui/matchEndScreen.js";
 import { battleUI } from "../ui/battleUI.js";
 
@@ -94,26 +94,32 @@ const initializeSocket = (mode, roomId) => {
         updateGameState(state);
     });
 
+    socket.on('knockoutAnimation', (data) => {
+        console.log('[Socket] Knockout animation triggered', data);
+        triggerKOAnimation();
+    });
+
     // Handle match end
     socket.on("matchEnd", ({ winner, finalStats, reason }) => {
         console.log("Match ended! Winner:", winner);
+        setTimeout(() => {
+           // Stop game loop
+           stopRender();
+           
+           // Hide battle UI
+           battleUI.hide();
 
-        // Stop game loop
-        stopRender();
-        
-        // Hide battle UI
-        battleUI.hide();
-
-        // Show match end screen with stats
-        const localPlayer = finalStats.find(p => p.socketId === socket.id);
-        const opponent = finalStats.find(p => p.socketId !== socket.id);
-
-        matchEndScreen.show({
-            winner,
-            localPlayer,
-            opponent,
-            reason
-        });
+            const localPlayer = finalStats.find(p => p.socketId === socket.id);
+            const opponent = finalStats.find(p => p.socketId !== socket.id);
+            
+            matchEndScreen.show({
+                winner,
+                localPlayer,
+                opponent,
+                finalStats,
+                reason
+            });
+        }, 2500);
 
         inMatch = false;
     });
@@ -143,6 +149,7 @@ const initializeSocket = (mode, roomId) => {
         cleanupSocket();
         stopRender();
         titleScreenUI.showTitleScreen();
+        battleUI.hide();
     });
 
     // Send input to backend
