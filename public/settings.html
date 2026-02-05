@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings - Pixel Fighter 2D</title>
+    <link rel="stylesheet" href="settings.css">
+</head>
+<body>
+    <div class="settings-container">
+        <div class="settings-header">
+            <h1 class="title">SETTINGS</h1>
+            <button class="back-btn" id="backBtn">← BACK</button>
+        </div>
+
+        <div class="settings-content">
+            <!-- Audio Settings Section -->
+            <div class="settings-section">
+                <h2 class="section-title">AUDIO</h2>
+                <div class="settings-group">
+                    <div class="setting-item">
+                        <label for="masterVolume">
+                            <span class="setting-label">Master Volume</span>
+                            <span class="setting-value" id="masterValue">100%</span>
+                        </label>
+                        <input type="range" id="masterVolume" min="0" max="100" value="100" class="volume-slider">
+                    </div>
+
+                    <div class="setting-item">
+                        <label for="musicVolume">
+                            <span class="setting-label">Music Volume</span>
+                            <span class="setting-value" id="musicValue">80%</span>
+                        </label>
+                        <input type="range" id="musicVolume" min="0" max="100" value="80" class="volume-slider">
+                    </div>
+
+                    <div class="setting-item">
+                        <label for="sfxVolume">
+                            <span class="setting-label">Sound Effects (SFX)</span>
+                            <span class="setting-value" id="sfxValue">90%</span>
+                        </label>
+                        <input type="range" id="sfxVolume" min="0" max="100" value="90" class="volume-slider">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls Section -->
+            <div class="settings-section">
+                <h2 class="section-title">HOW TO PLAY</h2>
+                <div class="settings-group">
+                    <div class="control-item">
+                        <span class="control-label">Move Left</span>
+                        <button class="key-btn" data-action="moveLeft">A</button>
+                    </div>
+
+                    <div class="control-item">
+                        <span class="control-label">Move Right</span>
+                        <button class="key-btn" data-action="moveRight">D</button>
+                    </div>
+
+                    <div class="control-item">
+                        <span class="control-label">Jump</span>
+                        <button class="key-btn" data-action="jump">SPACE</button>
+                    </div>
+
+                    <div class="control-item">
+                        <span class="control-label">Crouch</span>
+                        <button class="key-btn" data-action="crouch">S</button>
+                    </div>
+
+                    <div class="control-item">
+                        <span class="control-label">Light Attack</span>
+                        <button class="key-btn" data-action="lightAttack">J</button>
+                    </div>
+
+                    <div class="control-item">
+                        <span class="control-label">Heavy Attack</span>
+                        <button class="key-btn" data-action="heavyAttack">F</button>
+                    </div>
+
+                    <div class="control-item">
+                        <span class="control-label">Special Move</span>
+                        <button class="key-btn" data-action="specialMove">L</button>
+                    </div>
+
+                    <div class="control-item">
+                        <span class="control-label">Block / Dodge</span>
+                        <button class="key-btn" data-action="blockDodge">SHIFT</button>
+                    </div>
+                </div>
+
+  
+
+    <script src="settings.js"></script>
+</body>
+</html>
