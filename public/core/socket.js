@@ -48,6 +48,9 @@ const initializeSocket = (mode, roomId) => {
     socket.on("customRoomError", ({ message }) => {
         alert(message);
         document.getElementById("queuing").classList.add("hidden");
+        cleanupSocket();
+        stopRender();
+        titleScreen();
     });
 
     socket.on("matchFound", ({ roomId, playerIndex }) => {
