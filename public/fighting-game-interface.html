@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fighting Game Interface</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- Left Player -->
+        <div class="character-frame left">
+            <img src="https://via.placeholder.com/110/8B4513/FFFFFF?text=KEN" alt="Player 1" class="character-image">
+        </div>
+        <div class="character-name left">KEN</div>
+
+        <div class="bars-container left">
+            <div class="health-bar-wrapper">
+                <div class="health-bar-bg" id="health-bg-p1">
+                    <div class="health-bar-fill" id="health-p1"></div>
+                </div>
+            </div>
+            <div class="ultimate-bar-wrapper">
+                <div class="ultimate-bar-bg" id="ultimate-bg-p1">
+                    <div class="ultimate-bar-fill" id="ultimate-p1"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Player -->
+        <div class="character-frame right">
+            <img src="https://via.placeholder.com/110/2F4F4F/FFFFFF?text=TERRY" alt="Player 2" class="character-image">
+        </div>
+        <div class="character-name right">TERRY</div>
+
+        <div class="bars-container right">
+            <div class="health-bar-wrapper">
+                <div class="health-bar-bg" id="health-bg-p2">
+                    <div class="health-bar-fill" id="health-p2"></div>
+                </div>
+            </div>
+            <div class="ultimate-bar-wrapper">
+                <div class="ultimate-bar-bg" id="ultimate-bg-p2">
+                    <div class="ultimate-bar-fill" id="ultimate-p2"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timer -->
+        <div class="timer-container">
+            <div class="timer-display" id="timer">90</div>
+        </div>
+
+        <!-- Round Indicator -->
+        <div class="round-indicator">Fire Village</div>
+    </div>
+
+    <script src="script.js">
+      
+    </script>
+</body>
+</html>
