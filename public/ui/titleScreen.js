@@ -4,6 +4,8 @@ import "./characterSelect.js";
 import "../core/input.js";
 
 const titleDiv = document.getElementById('title-screen');
+const roomDiv = document.getElementById('main-container');
+
 
 const titleScreen = () => {
     showTitleScreen();
@@ -19,8 +21,13 @@ const titleScreen = () => {
                 startGame("quickStart");
                 break;
             case "room-btn":
-                console.log("Room creation not yet implemented");
                 // Show popup and take room id then start game with that room id
+                hideTitleScreen();
+                roomDiv.style.display = 'flex';
+                document.getElementById('room-back').addEventListener('click',(event)=>{
+                    roomDiv.style.display = "none";
+                    showTitleScreen();
+                })
                 // startGame("custom", roomId);
                 break;
             case "settings-btn":
