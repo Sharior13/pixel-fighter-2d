@@ -15,6 +15,9 @@
     --ui-border: #8b5cf6;
     --text-white: #ffffff;
     --shadow-dark: rgba(0, 0, 0, 0.8);
+     --line-color: #F10B0A;
+    --bg-color: rgba(20, 20, 20, 0.562);
+    --text-col: #FFFFFF;
 }
 
 body{
@@ -1050,4 +1053,153 @@ body{
     display: flex;
     flex-direction: column;
     gap: 10px;
+}
+/*----custom service css part-----*/
+
+/* top bars */
+.top-bar {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 10px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 2px solid var(--line-color); /* SINGLE LINE */
+}
+
+/* custom room */
+.custom-room {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 30px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    color: var(--line-color);
+    cursor: pointer;
+}
+
+.custom-room span {
+    text-shadow:
+        2px 2px 0 rgba(0, 0, 0, 0.9),
+        0 0 6px rgba(0, 0, 0, 0.8); /* individual blur */
+}
+.custom-room .space {
+    width: 8px; /* space between CUSTOM and ROOM */
+}
+
+.custom-room span {
+    transition: transform 0.15s ease;
+}
+
+.custom-room span:hover {
+    transform: translateY(-1px);
+}
+
+ /* back-button */
+ .back-btn {
+    background: var(--line-color);   /* red background */
+    color: #FFFFFF;                  /* white text */
+    border: none;
+    font-size: 18px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    padding: 5px 10px;
+    border-radius: 16px;
+    font-weight: bold;
+    transition: 0.2s ease;
+}
+
+.back-btn:hover {
+    background: #ff2a2a;   /* brighter red on hover */
+    color: #FFFFFF;
+}
+
+
+/* main transparent container */
+.main-container {
+    position: fixed;
+    inset: 0;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0,0,0,0.35);
+}
+
+
+/* black game box */
+.box {
+    background: var(--bg-color);
+    border: 4px solid var(--line-color);
+    width: 55%;              /* slightly wider */
+    max-width: 520px;        /* cap on large screens */
+    height: 250px;
+    padding: 28px 22px;
+    display: flex;
+    flex-direction: column;  /* keep join-wrap stacked nicely */
+    position: relative;
+    box-shadow: 2px 1px 25px rgba(0,0,0,0.6); /* subtle darker shadow */
+    border-radius: 10px;
+}
+
+
+
+
+/* JOIN | CREATE inline */
+.join-wrap {
+    display: flex;
+    flex-direction: row;   /* INLINE again */
+    gap: 25px;
+    width: 100%;
+    justify-content: center;
+    margin-top: 40px; 
+}
+
+
+
+/* each menu */
+.join {
+    width: 45%;
+    color: var(--text-col);
+}
+
+
+
+/* room id + input same line */
+.row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 12px 0;
+}
+
+
+.inp {
+    flex: 1;
+    background: transparent;
+    border: 2px solid var(--line-color);
+    color: var(--text-col);
+    padding: 6px;
+    width: 10px;
+    border-radius: 20px;
+    font-size: 15px;
+}
+
+/* button in block */
+.join button {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    background: var(--line-color);
+    color: var(--text-col);
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    font-size: 20px;
+    border-radius: 20px;
+}
+.join button:hover {
+    background: #ff2a2a;
 }
