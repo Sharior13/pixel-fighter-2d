@@ -1,6 +1,7 @@
-const { initMatchmaking, addToQueue, removeFromQueue } = require('../matchmaking/matchMaking.js');
+const { initMatchmaking, addToQueue, removeFromQueue, createCustomRoom, joinCustomRoom } = require('../matchmaking/matchMaking.js');
 const { getMatchBySocket, selectCharacter, lockCharacter, deleteMatch } = require('../matchmaking/matchManager.js');
 const { initializeGameState, processInput, startGameLoop, getGameState, deleteGameState } = require('../core/gameState.js');
+const { handleRematchRequest, handleRematchDecline, clearRematchRequests } = require('../matchmaking/rematchHandler.js');
 
 const socketHandler = (io)=>{
 
@@ -15,8 +16,26 @@ const socketHandler = (io)=>{
                 addToQueue(socket);
                 socket.emit("queueJoined");
             }
-            else if(mode === "custom"){
-                // socket.join(roomId);
+        });
+
+        //create custom room
+        socket.on("createCustomRoom", () => {
+            const result = createCustomRoom(socket);
+            if (result && result.roomId) {
+                socket.emit("customRoomCreated", { roomId: result.roomId });
+                console.log(`[Socket] Custom room created: ${result.roomId}`);
+            } else {
+                socket.emit("customRoomError", { message: "Failed to create room" });
+            }
+        });
+
+        //join custom room
+        socket.on("joinCustomRoom", (roomId) => {
+            const result = joinCustomRoom(socket, roomId);
+            if (result && result.error) {
+                socket.emit("customRoomError", { message: result.error });
+            } else if (result && result.success) {
+                console.log(`[Socket] Player ${socket.id} joined custom room ${roomId}`);
             }
         });
         
@@ -113,27 +132,29 @@ const socketHandler = (io)=>{
 
         //rematch logic
         socket.on('rematchRequest', () => {
-            const { rematchHandler } = require('../matchmaking/rematchHandler.js');
-            const { getMatchBySocket, createMatch, startCharacterSelectTimeout } = require('../matchmaking/matchManager.js');
-            
             console.log(`[Server] Rematch requested by ${socket.id}`);
-            
-            rematchHandler.handleRematchRequest(
-                socket, 
-                io, 
-                getMatchBySocket, 
-                createMatch, 
-                startCharacterSelectTimeout
-            );
+            handleRematchRequest(socket, io, getMatchBySocket);
+        });
+
+        //rematch decline logic
+        socket.on('rematchDecline', () => {
+            console.log(`[Server] Rematch declined by ${socket.id}`);
+            handleRematchDecline(socket, io, getMatchBySocket);
         });
 
         //main menu button logic
         socket.on('returnToMenu', () => {
-            const { getMatchBySocket, deleteMatch } = require('../matchmaking/matchManager.js');
             const match = getMatchBySocket(socket);
                 
             if (match) {
                 console.log(`[Server] ${socket.id} returning to menu from room ${match.roomId}`);
+                
+                // Clear rematch requests for this room
+                clearRematchRequests(match.roomId);
+                
+                // Notify other players
+                io.to(match.roomId).emit("playerReturnedToMenu", socket.id);
+                
                 socket.leave(match.roomId);
             }
         });
@@ -148,6 +169,9 @@ const socketHandler = (io)=>{
             if(!match){ 
                 return;
             }
+
+            // Clear rematch requests for this room
+            clearRematchRequests(match.roomId);
 
             io.to(match.roomId).emit("playerDisconnected", socket.id);
 

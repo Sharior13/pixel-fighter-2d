@@ -1,181 +1,101 @@
-const { initMatchmaking, addToQueue, removeFromQueue } = require('../matchmaking/matchMaking.js');
-const { getMatchBySocket, selectCharacter, lockCharacter, deleteMatch } = require('../matchmaking/matchManager.js');
-const { initializeGameState, processInput, startGameLoop, getGameState, deleteGameState } = require('../core/gameState.js');
+const { initializeGameState, startGameLoop, deleteGameState } = require('../core/gameState.js');
+const { createMatch, startCharacterSelectTimeout, deleteMatch } = require('./matchManager.js');
 
-const socketHandler = (io)=>{
+const rematchRequests = new Map(); // roomId -> Set of socket IDs who want rematch
 
-    //pass io to matchmaking.js
-    initMatchmaking(io);
-    io.on('connection', (socket)=>{
-        console.log("player connected");
+const handleRematchRequest = (socket, io, getMatchBySocket) => {
+    const match = getMatchBySocket(socket);
+    
+    if (!match) {
+        console.log(`[Rematch] No match found for ${socket.id}`);
+        return;
+    }
+
+    const roomId = match.roomId;
+    
+    // Initialize rematch requests for this room if not exists
+    if (!rematchRequests.has(roomId)) {
+        rematchRequests.set(roomId, new Set());
+    }
+
+    const requests = rematchRequests.get(roomId);
+    requests.add(socket.id);
+
+    console.log(`[Rematch] ${socket.id} wants rematch in ${roomId}. Total requests: ${requests.size}/${match.players.length}`);
+
+    // If all players want rematch
+    if (requests.size === match.players.length) {
+        console.log(`[Rematch] All players agreed! Starting rematch for room ${roomId}`);
         
-        //start match process when player presses quick play or custom room
-        socket.on("findMatch", (mode, roomId)=>{
-            if(mode === "quickStart"){
-                addToQueue(socket);
-                socket.emit("queueJoined");
-            }
-            else if(mode === "custom"){
-                // socket.join(roomId);
-            }
-        });
-        
-        //receive player selected character in character selecting phase
-        socket.on("selectCharacter", (characterId)=>{
-            const match = selectCharacter(socket, characterId);
-            if (!match || match.phase !== "CHARACTER_SELECT"){ 
-                return;
-            }
-            
-            io.to(match.roomId).emit("characterPreview", {
-                socketId: socket.id,
-                characterId
-            });            
+        // Clear rematch requests
+        rematchRequests.delete(roomId);
+
+        // CRITICAL: Delete old game state and match before creating new one
+        deleteGameState(roomId);
+        deleteMatch(roomId);
+
+        // Create new match with same players
+        const players = match.players.map(p => p.socket);
+        const newMatch = createMatch(roomId, players);
+
+        // Notify all players that rematch is accepted
+        io.to(roomId).emit("rematchAccepted", {
+            roomId: newMatch.roomId
         });
 
-        //handle server-side lock in logic
-        socket.on("lockCharacter", ()=>{
-            const match = getMatchBySocket(socket);
-            
-            if(!match){ 
-                return;
-            }
-            
-            const player = match.players.find(p => p.socketId === socket.id);
-            if(!player){
-                return;
-            }
-
-            // lock the character and get fight data if all players are locked
-            const fightData = lockCharacter(socket);
-
-            io.to(match.roomId).emit("playerLocked", {
-                socketId: socket.id,
-                playerIndex: player.playerIndex,
-                characterId: player.character
-            });
-
-            if(fightData){
-                console.log("All players locked, starting match");
-                
-                //initialize server-authoritative game state
-                try{
-                    const gameState = initializeGameState(fightData.roomId, fightData.players, fightData.mapId);
-                    
-                    //emit startMatch with initial game state
-                    io.to(fightData.roomId).emit("startMatch", {
-                        roomId: fightData.roomId,
-                        players: fightData.players,
-                        map: gameState.map,
-                        gameState: {
-                            players: gameState.players.map(p => ({
-                                socketId: p.socketId,
-                                playerIndex: p.playerIndex,
-                                character: p.character,
-                                position: p.position,
-                                health: p.health,
-                                maxHealth: p.maxHealth
-                            }))
-                        }
-                    });
-                    
-                    //start the server-side game loop
-                    startGameLoop(fightData.roomId, io);
-                } catch(error){
-                    io.to(fightData.roomId).emit("matchError", {
-                        message: "Failed to start match"
-                    });
-                }
-            }
-        });
-
-        //handle player input during fight
-        socket.on("playerInput", (inputs)=>{
-            const match = getMatchBySocket(socket);
-            
-            if(!match || match.phase !== "FIGHT"){
-                return;
-            }
-
-            if(!Array.isArray(inputs)){
-                console.warn("Invalid input batch");
-                return;
-            }
-            
-            //process input through server-side game state
-            inputs.forEach(input=>{
-                const result = processInput(match.roomId, socket.id, input);
-                if(!result){
-                    console.warn("failed to process input for:", socket.id);
-                }
-            });           
-        });
-
-        //rematch logic
-        socket.on('rematchRequest', () => {
-            const { rematchHandler } = require('../matchmaking/rematchHandler.js');
-            const { getMatchBySocket, createMatch, startCharacterSelectTimeout } = require('../matchmaking/matchManager.js');
-            
-            console.log(`[Server] Rematch requested by ${socket.id}`);
-            
-            rematchHandler.handleRematchRequest(
-                socket, 
-                io, 
-                getMatchBySocket, 
-                createMatch, 
-                startCharacterSelectTimeout
-            );
-        });
-
-        //main menu button logic
-        socket.on('returnToMenu', () => {
-            const { getMatchBySocket, deleteMatch } = require('../matchmaking/matchManager.js');
-            const match = getMatchBySocket(socket);
-                
-            if (match) {
-                console.log(`[Server] ${socket.id} returning to menu from room ${match.roomId}`);
-                socket.leave(match.roomId);
-            }
-        });
-
-        //remove players on disconnect
-        socket.on("disconnect", ()=>{
-            console.log("Player disconnected");
-
-            removeFromQueue(socket);
-            
-            const match = getMatchBySocket(socket);
-            if(!match){ 
-                return;
-            }
-
-            io.to(match.roomId).emit("playerDisconnected", socket.id);
-
-            if(match.phase === "CHARACTER_SELECT"){
-                deleteGameState(match.roomId);
-                deleteMatch(match.roomId);
-                io.to(match.roomId).emit("matchError", {
-                    reason: "opponent_disconnected"
-                });
-            } 
-            else if(match.phase === "FIGHT"){
-                //end the game if a player disconnects during fight
-                const gameState = getGameState(match.roomId);
-
-                if(gameState){
-                    const remainingPlayer = gameState.players.find(p => p.socketId !== socket.id);
-                    if(remainingPlayer){
-                        io.to(match.roomId).emit("matchEnd", {
-                            winner: remainingPlayer.socketId,
-                            reason: "opponent_disconnected"
-                        });
+        // Start character selection timeout
+        startCharacterSelectTimeout(newMatch, (fightData) => {
+            try {
+                const gameState = initializeGameState(fightData.roomId, fightData.players, fightData.mapId);
+                io.to(fightData.roomId).emit("startMatch", {
+                    roomId: fightData.roomId,
+                    players: fightData.players,
+                    map: gameState.map,
+                    gameState: {
+                        players: gameState.players.map(p => ({
+                            socketId: p.socketId,
+                            playerIndex: p.playerIndex,
+                            character: p.character,
+                            position: p.position,
+                            health: p.health,
+                            maxHealth: p.maxHealth
+                        }))
                     }
-                }
-                deleteGameState(match.roomId);
-                deleteMatch(match.roomId);
+                });
+
+                startGameLoop(fightData.roomId, io);
+                console.log("[Rematch] Match started successfully");
+            } catch (error) {
+                console.error("[Rematch] Error starting match:", error);
+                io.to(fightData.roomId).emit("matchError", {
+                    message: "Failed to start rematch"
+                });
             }
         });
-    });
+    }
 };
 
-module.exports = { socketHandler };
+const handleRematchDecline = (socket, io, getMatchBySocket) => {
+    const match = getMatchBySocket(socket);
+    
+    if (!match) {
+        return;
+    }
+
+    const roomId = match.roomId;
+    
+    // Clear rematch requests for this room
+    rematchRequests.delete(roomId);
+
+    // Notify all players that rematch was declined
+    io.to(roomId).emit("rematchDeclined");
+
+    console.log(`[Rematch] ${socket.id} declined rematch in ${roomId}`);
+};
+
+const clearRematchRequests = (roomId) => {
+    rematchRequests.delete(roomId);
+};
+
+module.exports = { handleRematchRequest, handleRematchDecline, clearRematchRequests
+};

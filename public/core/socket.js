@@ -16,7 +16,13 @@ const initializeSocket = (mode, roomId) => {
     socket = io();
 
     // Start match process
-    socket.emit("findMatch", mode, roomId);
+    if (mode === "quickStart") {
+        socket.emit("findMatch", mode, roomId);
+    } else if (mode === "createCustomRoom") {
+        socket.emit("createCustomRoom");
+    } else if (mode === "joinCustomRoom") {
+        socket.emit("joinCustomRoom", roomId);
+    }
 
     socket.on("queueJoined", () => {
         if (inMatch) {
@@ -25,6 +31,23 @@ const initializeSocket = (mode, roomId) => {
 
         document.getElementById("queuing").classList.remove("hidden");
         document.getElementById("queuing").innerHTML = `<p>Queue started!</p>`;
+    });
+
+    socket.on("customRoomCreated", ({ roomId }) => {
+        console.log("Custom room created:", roomId);
+        document.getElementById("queuing").classList.remove("hidden");
+        document.getElementById("queuing").innerHTML = `
+            <div style="text-align: center;">
+                <p>Custom Room Created!</p>
+                <p style="font-size: 24px; font-weight: bold; margin: 10px 0;">Room ID: ${roomId}</p>
+                <p style="font-size: 14px; color: #888;">Waiting for opponent to join...</p>
+            </div>
+        `;
+    });
+
+    socket.on("customRoomError", ({ message }) => {
+        alert(message);
+        document.getElementById("queuing").classList.add("hidden");
     });
 
     socket.on("matchFound", ({ roomId, playerIndex }) => {
@@ -83,9 +106,6 @@ const initializeSocket = (mode, roomId) => {
         });
 
         inMatch = false;
-        
-        // Clean up socket as requested
-        // Note: We delay this slightly to allow rematch requests to work
     });
 
     // Handle rematch responses
@@ -98,6 +118,13 @@ const initializeSocket = (mode, roomId) => {
     socket.on("rematchDeclined", () => {
         console.log("Rematch declined by opponent");
         matchEndScreen.handleRematchDeclined();
+    });
+
+    socket.on("playerReturnedToMenu", (socketId) => {
+        console.log("Opponent returned to menu");
+        if (matchEndScreen.isWaitingForRematch) {
+            matchEndScreen.handleRematchDeclined();
+        }
     });
 
     socket.on("matchError", ({ errMsg }) => {

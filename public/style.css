@@ -1099,22 +1099,20 @@ body{
 }
 
  /* back-button */
- .back-btn {
-    background: var(--line-color);   /* red background */
-    color: #FFFFFF;                  /* white text */
+ .back-btn { 
     border: none;
     font-size: 18px;
     letter-spacing: 1px;
-    cursor: pointer;
     padding: 5px 10px;
     border-radius: 16px;
     font-weight: bold;
-    transition: 0.2s ease;
-}
-
-.back-btn:hover {
-    background: #ff2a2a;   /* brighter red on hover */
-    color: #FFFFFF;
+    background-image: linear-gradient(to right, #ff001e 0%, #EA384D  51%, #ff001e  100%);
+    color: white;
+    background-size: 200% auto;
+    box-shadow: 0 0 20px #4e4e4e;
+    display: block;
+    cursor: pointer;
+    transition: 0.5s ease, transform 0.1s ease, box-shadow 0.1s ease;
 }
 
 
@@ -1189,17 +1187,17 @@ body{
 
 /* button in block */
 .join button {
-    display: block;
     width: 100%;
     margin-top: 10px;
-    background: var(--line-color);
-    color: var(--text-col);
-    border: none;
     padding: 8px;
-    cursor: pointer;
     font-size: 20px;
-    border-radius: 20px;
-}
-.join button:hover {
-    background: #ff2a2a;
+    background-image: linear-gradient(to right, #ff001e 0%, #EA384D  51%, #ff001e  100%);
+    border: none;
+    color: white;
+    border-radius: 22px;
+    background-size: 200% auto;
+    box-shadow: 0 0 20px #4e4e4e;
+    display: block;
+    cursor: pointer;
+    transition: 0.5s ease, transform 0.1s ease, box-shadow 0.1s ease;
 }

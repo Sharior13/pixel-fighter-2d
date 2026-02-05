@@ -1,4 +1,5 @@
 import { socket } from "../core/socket.js";
+import { canvas } from "../core/render.js";
 
 const grid = document.getElementById("character-grid");
 const lockBtn = document.getElementById("lockBtn");
@@ -31,6 +32,8 @@ const openCharacterSelect = ()=>{
     document.getElementById("character-select").style.display = "flex"; 
     document.getElementById('p1-label').classList.remove('active');
     document.getElementById('p2-label').classList.remove('active');
+
+    canvas.style.backgroundImage = "url('../assets/background/title-bg.gif')";
 
     characterSelectState.selectedCharacter = null;
     characterSelectState.opponentCharacter = null;
@@ -67,7 +70,7 @@ const renderCharacterGrid = ()=>{
         }
     
         slot.onclick = ()=>{
-            if(characterSelectState.locked){
+            if(characterSelectState.locked || char.locked){
               return;
             }
             if (char.id === characterSelectState.opponentCharacter) {
@@ -112,7 +115,7 @@ const updatePlayerPreview = (previewElement, character) => {
 //update character selection ui
 const updateSelectionUI = ()=>{
     document.querySelectorAll(".character-slot").forEach((btn, index)=>{
-        btn.classList.remove("selected", "locked", "taken");
+        btn.classList.remove("selected", "taken");
         btn.removeAttribute("data-player");
         const charId = CHARACTERS[index].id;
         if(characterSelectState.opponentCharacter === charId && characterSelectState.selectedCharacter !== charId){

@@ -88,7 +88,6 @@ class MatchEndScreen {
             resultText.textContent = 'VICTORY';
             resultText.classList.add('victory');
             resultContainer.classList.add('victory');
-            this.createConfetti();
         } else {
             resultText.textContent = 'DEFEAT';
             resultText.classList.add('defeat');
@@ -122,24 +121,6 @@ class MatchEndScreen {
             playerData.combo || 0;
     }
 
-    createConfetti() {
-        // Create victory confetti
-        for (let i = 0; i < 50; i++) {
-            setTimeout(() => {
-                const confetti = document.createElement('div');
-                confetti.className = 'confetti';
-                confetti.style.left = Math.random() * 100 + '%';
-                confetti.style.animationDelay = Math.random() * 3 + 's';
-                confetti.style.background = ['#FFD700', '#FFA500', '#FF6347', '#4A90E2'][
-                    Math.floor(Math.random() * 4)
-                ];
-                this.screenElement.appendChild(confetti);
-
-                setTimeout(() => confetti.remove(), 3000);
-            }, i * 50);
-        }
-    }
-
     requestRematch() {
         if (!socket || this.isWaitingForRematch) {
             return;
@@ -160,6 +141,11 @@ class MatchEndScreen {
     }
 
     returnToMenu() {
+        // Send decline signal if waiting for rematch
+        if (this.isWaitingForRematch && socket) {
+            socket.emit('rematchDecline');
+        }
+
         // Clean up and return to title screen
         this.hide();
         
@@ -186,9 +172,6 @@ class MatchEndScreen {
         this.screenElement.querySelectorAll('.player-stats').forEach(stat => {
             stat.classList.remove('winner', 'loser');
         });
-
-        // Remove confetti
-        this.screenElement.querySelectorAll('.confetti').forEach(c => c.remove());
 
         // Reset buttons
         const rematchBtn = document.getElementById('rematch-btn');

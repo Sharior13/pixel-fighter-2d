@@ -6,7 +6,6 @@ import "../core/input.js";
 const titleDiv = document.getElementById('title-screen');
 const roomDiv = document.getElementById('main-container');
 
-
 const titleScreen = () => {
     showTitleScreen();
 
@@ -21,14 +20,9 @@ const titleScreen = () => {
                 startGame("quickStart");
                 break;
             case "room-btn":
-                // Show popup and take room id then start game with that room id
+                // Show custom room UI
                 hideTitleScreen();
                 roomDiv.style.display = 'flex';
-                document.getElementById('room-back').addEventListener('click',(event)=>{
-                    roomDiv.style.display = "none";
-                    showTitleScreen();
-                })
-                // startGame("custom", roomId);
                 break;
             case "settings-btn":
                 // Show settings
@@ -39,6 +33,47 @@ const titleScreen = () => {
             default:
                 break;
         }
+    });
+
+    // Custom room back button
+    document.getElementById('room-back').addEventListener('click', () => {
+        roomDiv.style.display = "none";
+        showTitleScreen();
+    });
+
+    // Create room button
+    document.getElementById('room-create-btn').addEventListener('click', () => {
+        const roomNameInput = document.querySelector('#main-container .join:nth-child(2) input');
+        const roomName = roomNameInput.value.trim();
+        
+        if (!roomName) {
+            alert("Please enter a room name");
+            return;
+        }
+
+        hideTitleScreen();
+        roomDiv.style.display = "none";
+        startGame("createCustomRoom");
+    });
+
+    // Join room button
+    document.getElementById('room-join-btn').addEventListener('click', () => {
+        const roomIdInput = document.querySelector('#main-container .join:nth-child(1) input');
+        const roomId = roomIdInput.value.trim().toUpperCase();
+        
+        if (!roomId) {
+            alert("Please enter a room ID");
+            return;
+        }
+
+        if (roomId.length !== 5) {
+            alert("Room ID must be 5 characters");
+            return;
+        }
+
+        hideTitleScreen();
+        roomDiv.style.display = "none";
+        startGame("joinCustomRoom", roomId);
     });
 };
 
