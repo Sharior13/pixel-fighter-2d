@@ -22,9 +22,9 @@ canvas.height = window.innerHeight;
 window.addEventListener('resize', ()=>{
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+    bgImg.style.width = currentMap.width + 'px';
+    bgImg.style.height = currentMap.height + 'px';
     if(bgImg){
-        bgImg.style.width = currentMap.width + 'px';
-        bgImg.style.height = currentMap.height + 'px';
     }
 });
 
@@ -132,7 +132,6 @@ const initializePlayerSprites = (player) => {
     }
 };
 
-// FIXED: Add KO animation trigger handler
 const triggerKOAnimation = () => {
     showKOOverlay = true;
     koAnimationStartTime = performance.now();
@@ -148,7 +147,6 @@ const stopRender = ()=>{
     currentGameState = null;
     currentMap = null;
     
-    // FIXED: Reset KO overlay
     showKOOverlay = false;
     koAnimationStartTime = 0;
     

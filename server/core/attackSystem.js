@@ -1,274 +1,379 @@
 const ATTACK_CONFIG = {
     luffy: {
         attack1: {
-            damage: 8,
-            cooldown: 400,
+            damage: 30,
+            cooldown: 2500,
             duration: 560,
             knockback: { x: 8, y: 0 },
-            animation: 'attack1'
+            animation: 'attack1',
+            range: 60, // Short range punch
+            hitboxWidth: 40,
+            hitboxHeight: 50
         },
         attack2: {
-            damage: 12,
-            cooldown: 600,
+            damage: 35,
+            cooldown: 3000,
             duration: 640,
             knockback: { x: 12, y: 0 },
-            animation: 'attack2'
+            animation: 'attack2',
+            range: 80, // Medium range kick
+            hitboxWidth: 50,
+            hitboxHeight: 60
         },
         basic: {
-            damage: 15,
+            damage: 20,
             cooldown: 1000,
             duration: 300,
             knockback: { x: 10, y: 0 },
-            animation: 'attack_basic'
+            animation: 'attack_basic',
+            range: 100, // Extended punch
+            hitboxWidth: 60,
+            hitboxHeight: 70
         },
         special: {
-            damage: 35,
-            cooldown: 6000,
+            damage: 70,
+            cooldown: 10000,
             duration: 900,
             knockback: { x: 20, y: 0 },
-            animation: 'attack_special'
+            animation: 'attack_special',
+            range: 150, // Gomu Gomu extended attack
+            hitboxWidth: 80,
+            hitboxHeight: 80
         },
         ultimate: {
-            damage: 60,
-            cooldown: 25000,
+            damage: 150,
+            cooldown: 30000,
             duration: 1200,
             knockback: { x: 40, y: 0 },
             animation: 'attack_ultimate',
-            dashDistance: 0
+            dashDistance: 0,
+            range: 200, // Gear Fourth range
+            hitboxWidth: 100,
+            hitboxHeight: 100
         }
     },
     
     zoro: {
         attack1: {
-            damage: 10,
-            cooldown: 450,
+            damage: 37,
+            cooldown: 2500,
             duration: 480,
             knockback: { x: 10, y: 0 },
-            animation: 'attack1'
+            animation: 'attack1',
+            range: 70, // Sword slash
+            hitboxWidth: 50,
+            hitboxHeight: 60
         },
         attack2: {
-            damage: 14,
-            cooldown: 650,
+            damage: 52,
+            cooldown: 3000,
             duration: 720,
             knockback: { x: 8, y: 0 },
-            animation: 'attack2'
+            animation: 'attack2',
+            range: 90, // Wide sword arc
+            hitboxWidth: 60,
+            hitboxHeight: 70
         },
         basic: {
-            damage: 18,
-            cooldown: 1200,
+            damage: 37,
+            cooldown: 1000,
             duration: 600,
             knockback: { x: 12, y: 0 },
-            animation: 'attack_basic'
+            animation: 'attack_basic',
+            range: 110, // Three sword style
+            hitboxWidth: 70,
+            hitboxHeight: 80
         },
         special: {
-            damage: 40,
-            cooldown: 7000,
+            damage: 87,
+            cooldown: 10000,
             duration: 1200,
             knockback: { x: 25, y: 0 },
-            animation: 'attack_special'
+            animation: 'attack_special',
+            range: 160, // Oni Giri
+            hitboxWidth: 90,
+            hitboxHeight: 90
         },
         ultimate: {
-            damage: 70,
-            cooldown: 30000,
+            damage: 195,
+            cooldown: 15000,
             duration: 1200,
             knockback: { x: 50, y: 0 },
             animation: 'attack_ultimate',
-            dashDistance: 500
+            dashDistance: 500,
+            range: 250, // Asura attack
+            hitboxWidth: 120,
+            hitboxHeight: 120
         }
     },
     
     naruto: {
         attack1: {
-            damage: 9,
+            damage: 33,
             cooldown: 420,
             duration: 480,
             knockback: { x: 7, y: 0 },
-            animation: 'attack1'
+            animation: 'attack1',
+            range: 55, // Quick punch
+            hitboxWidth: 35,
+            hitboxHeight: 45
         },
         attack2: {
-            damage: 11,
+            damage: 38,
             cooldown: 580,
             duration: 640,
             knockback: { x: 9, y: 0 },
-            animation: 'attack2'
+            animation: 'attack2',
+            range: 65, // Spinning kick
+            hitboxWidth: 45,
+            hitboxHeight: 55
         },
         basic: {
-            damage: 16,
+            damage: 23,
             cooldown: 1100,
             duration: 480,
             knockback: { x: 15, y: 0 },
-            animation: 'attack_basic'
+            animation: 'attack_basic',
+            range: 85, // Shadow clone attack
+            hitboxWidth: 55,
+            hitboxHeight: 65
         },
         special: {
-            damage: 38,
+            damage: 73,
             cooldown: 6500,
             duration: 600,
             knockback: { x: 22, y: 0 },
-            animation: 'attack_special'
+            animation: 'attack_special',
+            range: 120, // Rasengan
+            hitboxWidth: 70,
+            hitboxHeight: 70
         },
         ultimate: {
-            damage: 65,
+            damage: 195,
             cooldown: 28000,
             duration: 720,
             knockback: { x: 45, y: 0 },
             animation: 'attack_ultimate',
-            dashDistance: 500
+            dashDistance: 500,
+            range: 180, // Rasenshuriken
+            hitboxWidth: 100,
+            hitboxHeight: 100
         }
     },
     
     kakashi: {
         attack1: {
-            damage: 9,
+            damage: 42,
             cooldown: 430,
             duration: 480,
             knockback: { x: 8, y: 0 },
-            animation: 'attack1'
+            animation: 'attack1',
+            range: 65, // Kunai strike
+            hitboxWidth: 40,
+            hitboxHeight: 50
         },
         attack2: {
-            damage: 11,
+            damage: 48,
             cooldown: 600,
             duration: 640,
             knockback: { x: 10, y: 0 },
-            animation: 'attack2'
+            animation: 'attack2',
+            range: 75, // Lightning blade thrust
+            hitboxWidth: 50,
+            hitboxHeight: 60
         },
         basic: {
-            damage: 17,
+            damage: 34,
             cooldown: 1150,
             duration: 480,
             knockback: { x: 14, y: 0 },
-            animation: 'attack_basic'
+            animation: 'attack_basic',
+            range: 95, // Chidori
+            hitboxWidth: 60,
+            hitboxHeight: 70
         },
         special: {
-            damage: 42,
+            damage: 81,
             cooldown: 8000,
             duration: 600,
             knockback: { x: 28, y: 0 },
-            animation: 'attack_special'
+            animation: 'attack_special',
+            range: 140, // Lightning cutter
+            hitboxWidth: 80,
+            hitboxHeight: 80
         },
         ultimate: {
-            damage: 75,
+            damage: 183,
             cooldown: 35000,
             duration: 720,
             knockback: { x: 55, y: 0 },
             animation: 'attack_ultimate',
-            dashDistance: 500
+            dashDistance: 500,
+            range: 200, // Kamui
+            hitboxWidth: 110,
+            hitboxHeight: 110
         }
     },
 
     sasuke: {
         attack1: {
-            damage: 9,
+            damage: 45,
             cooldown: 430,
             duration: 480,
             knockback: { x: 8, y: 0 },
-            animation: 'attack1'
+            animation: 'attack1',
+            range: 60, // Sword slash
+            hitboxWidth: 40,
+            hitboxHeight: 50
         },
         attack2: {
-            damage: 11,
+            damage: 50,
             cooldown: 600,
             duration: 640,
             knockback: { x: 10, y: 0 },
-            animation: 'attack2'
+            animation: 'attack2',
+            range: 70, // Kusanagi thrust
+            hitboxWidth: 50,
+            hitboxHeight: 60
         },
         basic: {
-            damage: 17,
+            damage: 35,
             cooldown: 1150,
             duration: 480,
             knockback: { x: 14, y: 0 },
-            animation: 'attack_basic'
+            animation: 'attack_basic',
+            range: 90, // Chidori
+            hitboxWidth: 60,
+            hitboxHeight: 70
         },
         special: {
-            damage: 42,
-            cooldown: 8000,
+            damage: 95,
+            cooldown: 15000,
             duration: 600,
             knockback: { x: 28, y: 0 },
-            animation: 'attack_special'
+            animation: 'attack_special',
+            range: 130, // Amaterasu
+            hitboxWidth: 75,
+            hitboxHeight: 75
         },
         ultimate: {
-            damage: 75,
+            damage: 225,
             cooldown: 35000,
             duration: 720,
             knockback: { x: 55, y: 0 },
             animation: 'attack_ultimate',
-            dashDistance: 500
+            dashDistance: 500,
+            range: 190, // Susanoo attack
+            hitboxWidth: 105,
+            hitboxHeight: 105
         }
     },
 
     ichigo: {
         attack1: {
-            damage: 9,
+            damage: 35,
             cooldown: 430,
             duration: 480,
             knockback: { x: 8, y: 0 },
-            animation: 'attack1'
+            animation: 'attack1',
+            range: 75, // Zanpakuto slash
+            hitboxWidth: 45,
+            hitboxHeight: 55
         },
         attack2: {
-            damage: 11,
+            damage: 50,
             cooldown: 600,
             duration: 640,
             knockback: { x: 10, y: 0 },
-            animation: 'attack2'
+            animation: 'attack2',
+            range: 95, // Wide slash
+            hitboxWidth: 55,
+            hitboxHeight: 65
         },
         basic: {
-            damage: 17,
+            damage: 25,
             cooldown: 1150,
             duration: 480,
             knockback: { x: 14, y: 0 },
-            animation: 'attack_basic'
+            animation: 'attack_basic',
+            range: 115, // Bankai slash
+            hitboxWidth: 65,
+            hitboxHeight: 75
         },
         special: {
-            damage: 42,
-            cooldown: 8000,
+            damage: 95,
+            cooldown: 15000,
             duration: 600,
             knockback: { x: 28, y: 0 },
-            animation: 'attack_special'
+            animation: 'attack_special',
+            range: 150, // Getsuga Tensho
+            hitboxWidth: 85,
+            hitboxHeight: 85
         },
         ultimate: {
-            damage: 75,
+            damage: 200,
             cooldown: 35000,
             duration: 720,
             knockback: { x: 55, y: 0 },
             animation: 'attack_ultimate',
-            dashDistance: 400
+            dashDistance: 400,
+            range: 220, // Final Getsuga Tensho
+            hitboxWidth: 115,
+            hitboxHeight: 115
         }
     },
 
     rukia: {
         attack1: {
-            damage: 9,
+            damage: 50,
             cooldown: 430,
             duration: 480,
             knockback: { x: 8, y: 0 },
-            animation: 'attack1'
+            animation: 'attack1',
+            range: 58, // Ice sword slash
+            hitboxWidth: 38,
+            hitboxHeight: 48
         },
         attack2: {
-            damage: 11,
+            damage: 55,
             cooldown: 600,
             duration: 640,
             knockback: { x: 10, y: 0 },
-            animation: 'attack2'
+            animation: 'attack2',
+            range: 68, // Ice thrust
+            hitboxWidth: 48,
+            hitboxHeight: 58
         },
         basic: {
-            damage: 17,
+            damage: 40,
             cooldown: 1150,
             duration: 480,
             knockback: { x: 14, y: 0 },
-            animation: 'attack_basic'
+            animation: 'attack_basic',
+            range: 88, // Some no mai
+            hitboxWidth: 58,
+            hitboxHeight: 68
         },
         special: {
-            damage: 42,
-            cooldown: 8000,
+            damage: 90,
+            cooldown: 15000,
             duration: 600,
             knockback: { x: 28, y: 0 },
-            animation: 'attack_special'
+            animation: 'attack_special',
+            range: 125, // Ice wave
+            hitboxWidth: 72,
+            hitboxHeight: 72
         },
         ultimate: {
-            damage: 75,
+            damage: 250,
             cooldown: 35000,
             duration: 720,
             knockback: { x: 55, y: 0 },
             animation: 'attack_ultimate',
-            dashDistance: 400
+            dashDistance: 400,
+            range: 170, // Hakka no Togame
+            hitboxWidth: 98,
+            hitboxHeight: 98
         }
     },
 };
@@ -388,25 +493,32 @@ class AttackHandler {
     checkHit(gameState, attacker, attackData) {
         const config = attackData.config;
         
-        // Simple range-based hit detection using player hitboxes
+        // Range-based and hitbox-based hit detection
         for (const target of gameState.players) {
             // Skip self and dead players
             if (target.socketId === attacker.socketId || target.isDead) continue;
             
-            // Calculate distance between players using their hitboxes
+            // Calculate distance between players
             const distanceX = Math.abs(attacker.position.x - target.position.x);
             const distanceY = Math.abs(attacker.position.y - target.position.y);
             
             // Check if target is in front of attacker
             const inFrontOfAttacker = (target.position.x - attacker.position.x) * attacker.facing > 0;
             
-            // Hitbox-based collision (using player size.width and size.height)
-            const attackRange = (attacker.size.width + target.size.width) / 2 + 50; // Add 50px attack range
-            const verticalRange = Math.max(attacker.size.height, target.size.height);
+            // Use attack-specific range and hitbox
+            const attackRange = config.range || 50; // Use attack's range
+            const attackHitboxWidth = config.hitboxWidth || 40;
+            const attackHitboxHeight = config.hitboxHeight || 50;
             
-            if (inFrontOfAttacker && distanceX <= attackRange && distanceY <= verticalRange) {
+            // Calculate effective hit range based on character sizes and attack hitbox
+            const horizontalRange = (attacker.size.width / 2) + (target.size.width / 2) + attackRange;
+            const verticalRange = Math.max(attackHitboxHeight, target.size.height);
+            
+            // Check if target is within attack range and hitbox
+            if (inFrontOfAttacker && distanceX <= horizontalRange && distanceY <= verticalRange / 2) {
                 this.applyHit(gameState, attacker, target, attackData);
                 attackData.hasHit = true; // Mark as hit (single hit only)
+                console.log(`[AttackHandler] Hit detected - Range: ${attackRange}, Hitbox: ${attackHitboxWidth}x${attackHitboxHeight}`);
                 break; // Only hit one target
             }
         }

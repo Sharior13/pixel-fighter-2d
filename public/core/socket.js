@@ -91,6 +91,7 @@ const initializeSocket = (mode, roomId) => {
         // Play map music
         if (gameState.map && gameState.map.id) {
             console.log('[Socket] Playing map music:', gameState.map.id);
+            audioManager.stopMusic(true);
             audioManager.playMapMusic(gameState.map.id);
         }
         
@@ -162,7 +163,7 @@ const initializeSocket = (mode, roomId) => {
             setTimeout(() => {
                 audioManager.playTitleMusic();
             }, 600);
-        }, 2500);
+        }, 50);
 
         inMatch = false;
         currentCharacterId = null;

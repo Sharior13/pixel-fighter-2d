@@ -143,7 +143,7 @@ const socketHandler = (io)=>{
             inputs.forEach(input=>{
                 const result = processInput(match.roomId, socket.id, input);
                 if(!result){
-                    console.warn("failed to process input for:", socket.id);
+                    
                 }
             });           
         });
