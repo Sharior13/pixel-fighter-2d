@@ -1,4 +1,6 @@
 import { socket, cleanupSocket } from "../core/socket.js";
+import { titleScreenUI } from "./titleScreen.js";
+import { audioManager } from "../core/audioManager.js";
 
 class MatchEndScreen {
     constructor() {
@@ -13,9 +15,6 @@ class MatchEndScreen {
         const screen = document.createElement('div');
         screen.id = 'match-end-screen';
         screen.innerHTML = `
-            <div class="ko-container">
-                <div class="ko-text">K.O.</div>
-            </div>
             <div class="result-container">
                 <div class="result-text"></div>
                 <div class="match-stats">
@@ -149,13 +148,14 @@ class MatchEndScreen {
         // Clean up and return to title screen
         this.hide();
         
+        // Stop any playing music and ensure clean state
+        audioManager.stopMusic(false); // Immediate stop, no fade
+        
         // Clean up socket connection
         cleanupSocket();
 
-        // Import and call titleScreen
-        import('./titleScreen.js').then(({ titleScreen }) => {
-            titleScreen();
-        });
+        // Show title screen (which will start title music)
+        titleScreenUI.showTitleScreen();
     }
 
     hide() {

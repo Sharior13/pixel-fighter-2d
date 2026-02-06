@@ -2,6 +2,9 @@ import { socket } from "./socket.js";
 import { spriteManager } from "./spriteAnimator.js";
 import { characterSpriteConfigs } from "../data/characterSprites.js";
 import { animationStateManager } from "./animationStateManager.js";
+import { battleUI } from "../ui/battleUI.js";
+import { getPlayerUsername } from "../ui/titleScreen.js";
+import { audioManager } from "./audioManager.js";
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
@@ -20,6 +23,14 @@ let animationFrameId = null;
 let currentMap = null;
 let bgImg = null;
 let lastFrameTime = performance.now();
+
+// FIXED: Add KO overlay state
+let showKOOverlay = false;
+let koAnimationStartTime = 0;
+const KO_DISPLAY_DURATION = 2000; // Show KO for 2 seconds
+
+// Track player health for hit sound detection
+let playerHealthTracker = new Map(); // Map<socketId, previousHealth>
 
 const camera = {
     x: 0,
@@ -61,14 +72,36 @@ const setMap = (mapData)=>{
 
 const updateGameState = (state)=>{
     const isFirstState = !currentGameState;
+    const previousState = currentGameState;
     currentGameState = state;
     
     // Initialize sprite animators for new players
     if (isFirstState && state.players) {
         state.players.forEach(player => {
             initializePlayerSprites(player);
+            // Initialize health tracker
+            playerHealthTracker.set(player.socketId, player.health);
         });
     }
+    
+    // Check for health changes to play hit sounds
+    if (previousState && state.players) {
+        state.players.forEach(player => {
+            const previousHealth = playerHealthTracker.get(player.socketId);
+            
+            if (previousHealth !== undefined && player.health < previousHealth) {
+                // Player took damage, play hit sound
+                audioManager.playHitSound(player.character);
+                console.log(`[Render] ${player.socketId} took damage, playing hit sound`);
+            }
+            
+            // Update tracker
+            playerHealthTracker.set(player.socketId, player.health);
+        });
+    }
+    
+    // Update battle UI with current state
+    battleUI.update(state);
 };
 
 const initializePlayerSprites = (player) => {
@@ -91,6 +124,13 @@ const initializePlayerSprites = (player) => {
     }
 };
 
+// FIXED: Add KO animation trigger handler
+const triggerKOAnimation = () => {
+    showKOOverlay = true;
+    koAnimationStartTime = performance.now();
+    console.log('[Render] KO animation triggered');
+};
+
 const stopRender = ()=>{
     if(animationFrameId){
         cancelAnimationFrame(animationFrameId);
@@ -99,6 +139,13 @@ const stopRender = ()=>{
     isRendering = false;
     currentGameState = null;
     currentMap = null;
+    
+    // FIXED: Reset KO overlay
+    showKOOverlay = false;
+    koAnimationStartTime = 0;
+    
+    // Clear health tracker
+    playerHealthTracker.clear();
 
     if(bgImg){
         bgImg.remove();
@@ -234,6 +281,12 @@ const initializeRender = ()=>{
     };
     
     const drawPlayer = (player, deltaTime)=>{
+        // FIXED: Defensive check for player data
+        if (!player || !player.position || !player.size) {
+            console.warn('[Render] Invalid player data, skipping draw');
+            return;
+        }
+        
         // Update and draw sprite animation
         const animator = animationStateManager.getPlayerAnimator(player.socketId);
         
@@ -242,12 +295,11 @@ const initializeRender = ()=>{
             animationStateManager.updatePlayerAnimation(player, deltaTime);
             
             // Get character config for scale
-            const characterId = player.character.toLowerCase();
+            const characterId = player.character?.toLowerCase();
             const config = characterSpriteConfigs[characterId];
             const scale = config?.scale || 2.5;
             
-            //hitbox
-
+            //hitbox (debug)
             // ctx.fillStyle = player.socketId === socket.id ? "blue" : "red";
             // ctx.fillRect(
             //     player.position.x - player.size.width/2, 
@@ -275,68 +327,24 @@ const initializeRender = ()=>{
             );
         }
         
-        //facing indicator 
-        ctx.fillStyle = "rgba(255, 255, 0, 0.5)";
-        const arrowSize = 10;
-        const arrowX = player.facing > 0 ? 
-            player.position.x + player.size.width / 2 + 5 : 
-            player.position.x - player.size.width / 2 - 5 - arrowSize;
-        const arrowY = player.position.y - player.size.height / 2 - arrowSize / 2;
+        // Display player username above character
+        const displayName = player.socketId === socket.id ? getPlayerUsername() : (player.username || player.character?.charAt(0).toUpperCase() + player.character?.slice(1) || 'Player');
         
-        ctx.beginPath();
-        if(player.facing > 0){
-            ctx.moveTo(arrowX, arrowY);
-            ctx.lineTo(arrowX + arrowSize, arrowY + arrowSize / 2);
-            ctx.lineTo(arrowX, arrowY + arrowSize);
-        }
-        else{
-            ctx.moveTo(arrowX + arrowSize, arrowY);
-            ctx.lineTo(arrowX, arrowY + arrowSize / 2);
-            ctx.lineTo(arrowX + arrowSize, arrowY + arrowSize);
-        }
-        ctx.closePath();
-        ctx.fill();
-        
-        //character name
         ctx.fillStyle = "white";
         ctx.font = "bold 14px Arial";
         ctx.textAlign = "center";
         ctx.strokeStyle = "black";
         ctx.lineWidth = 3;
         ctx.strokeText(
-            player.character, 
+            displayName, 
             player.position.x, 
-            player.position.y - player.size.height - 35
+            player.position.y - player.size.height + 5
         );
         ctx.fillText(
-            player.character, 
+            displayName, 
             player.position.x, 
-            player.position.y - player.size.height - 35
+            player.position.y - player.size.height + 5
         );
-    };
-    
-    const drawHealthBar = (player)=>{
-        const barWidth = player.size.width;
-        const barHeight = 8;
-        const x = player.position.x - barWidth / 2;
-        const y = player.position.y - player.size.height - 10;
-        
-        //background
-        ctx.fillStyle = "black"; 
-        ctx.fillRect(x - 2, y - 2, barWidth + 4, barHeight + 4);
-
-        ctx.fillStyle = "red";
-        ctx.fillRect(x, y, barWidth, barHeight);
-        
-        //health
-        const healthWidth = (player.health / player.maxHealth) * barWidth;
-        ctx.fillStyle = "green";
-        ctx.fillRect(x, y, healthWidth, barHeight);
-
-        //border
-        ctx.strokeStyle = "white";
-        ctx.lineWidth = 1;
-        ctx.strokeRect(x, y, barWidth, barHeight);
     };
     
     const drawCooldowns = (player) => {
@@ -389,46 +397,53 @@ const initializeRender = ()=>{
         });
     };
     
-    const drawHUD = () => {
-        if(!currentGameState){
+    // FIXED: Add KO overlay drawing function
+    const drawKOOverlay = (currentTime) => {
+        if (!showKOOverlay) return;
+        
+        const elapsed = currentTime - koAnimationStartTime;
+        
+        // Hide KO after duration
+        if (elapsed > KO_DISPLAY_DURATION) {
+            showKOOverlay = false;
             return;
         }
         
-        //map name
-        if(currentMap){
-            ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-            ctx.fillRect(canvas.width / 2 - 100, 10, 200, 40);
-            
-            ctx.fillStyle = "white";
-            ctx.font = "bold 16px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText(currentMap.name, canvas.width / 2, 25);
-            
-            //time remaining
-            const timeLeft = Math.ceil(currentGameState.timeRemaining / 1000);
-            ctx.font = "14px Arial";
-            ctx.fillText(`Time: ${timeLeft}s`, canvas.width / 2, 42);
-        }
+        // Animation progress (0 to 1)
+        const progress = Math.min(elapsed / KO_DISPLAY_DURATION, 1);
         
-        //player scores
-        currentGameState.players.forEach((player, index) => {
-            const isLeft = index === 0;
-            const x = isLeft ? 20 : canvas.width - 220;
-            const y = 20;
-            
-            ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
-            ctx.fillRect(x, y, 200, 60);
-            
-            ctx.fillStyle = player.socketId === socket.id ? "#4A90E2" : "#E24A4A";
-            ctx.font = "bold 14px Arial";
-            ctx.textAlign = "left";
-            ctx.fillText(player.character, x + 10, y + 20);
-            
-            ctx.fillStyle = "white";
-            ctx.font = "12px Arial";
-            ctx.fillText(`HP: ${player.health}/${player.maxHealth}`, x + 10, y + 40);
-            ctx.fillText(`Combo: ${player.combo}`, x + 10, y + 55);
-        });
+        // Darken background
+        ctx.fillStyle = `rgba(0, 0, 0, ${0.7 * (1 - progress * 0.5)})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Calculate scale and opacity for KO text
+        const scalePhase1 = Math.min(elapsed / 300, 1); // Scale in over 300ms
+        const fadePhase = Math.max(0, (elapsed - 1500) / 500); // Fade out last 500ms
+        
+        const scale = 1 + scalePhase1 * 0.5;
+        const opacity = 1 - fadePhase;
+        
+        // Draw "KO" text
+        ctx.save();
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.scale(scale, scale);
+        
+        // Outer glow
+        ctx.shadowColor = '#FF0000';
+        ctx.shadowBlur = 30;
+        
+        // Main text
+        ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+        ctx.strokeStyle = `rgba(255, 0, 0, ${opacity})`;
+        ctx.lineWidth = 8;
+        ctx.font = 'bold 120px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        ctx.strokeText('K.O.', 0, 0);
+        ctx.fillText('K.O.', 0, 0);
+        
+        ctx.restore();
     };
     
     const animate = (currentTime) => {
@@ -446,8 +461,13 @@ const initializeRender = ()=>{
         if(!currentGameState || !currentGameState.players){
             return;
         }
-
-        updateCamera();
+        
+        // FIXED: Don't update camera if game has ended
+        const gameEnded = showKOOverlay || (currentGameState.players && currentGameState.players.some(p => p.state === 'victory' || p.state === 'defeated'));
+        
+        if (!gameEnded) {
+            updateCamera();
+        }
 
         drawBackground();
         
@@ -459,19 +479,16 @@ const initializeRender = ()=>{
         currentGameState.players.forEach(player=>{
             //draw player sprite with animation
             drawPlayer(player, deltaTime);
-            
-            //draw health bar
-            drawHealthBar(player);
         });
         
         ctx.restore();
         
-        currentGameState.players.forEach(player=>{
-            //draw cooldown indicators
-            drawCooldowns(player);
-        });
+        drawKOOverlay(currentTime);
         
-        drawHUD();
+        // currentGameState.players.forEach(player=>{
+        //     //draw cooldown indicators
+        //     drawCooldowns(player);
+        // });
         
         //for debug
         // drawGround();
@@ -481,4 +498,4 @@ const initializeRender = ()=>{
     animate(lastFrameTime);
 };
 
-export { initializeRender, stopRender, setMap, updateGameState, canvas };
+export { initializeRender, stopRender, setMap, updateGameState, triggerKOAnimation, canvas };

@@ -1,5 +1,6 @@
 import { socket } from "../core/socket.js";
 import { canvas } from "../core/render.js";
+import { audioManager } from "../core/audioManager.js";
 
 const grid = document.getElementById("character-grid");
 const lockBtn = document.getElementById("lockBtn");
@@ -16,15 +17,26 @@ const CHARACTERS = [
   { id: "kakashi", name: "Kakashi", image:'../assets/characters/kakashi/kakashi.gif' },
   { id: "ichigo", name: "Ichigo", image:'../assets/characters/ichigo/ichigo.gif' },
   { id: "rukia", name: "Rukia", image:'../assets/characters/rukia/rukia.gif' },
-  { id: "s1", name: "s1", image:'../assets/characters/others/s1.gif', locked: true },
-  { id: "s2", name: "s2", image:'../assets/characters/others/s2.gif', locked: true },
-  { id: "s3", name: "s3", image:'../assets/characters/others/s3.gif', locked: true },
-  { id: "s4", name: "s4", image:'../assets/characters/others/s4.gif', locked: true },
+  { id: "s1", name: "s1", image:'../assets/characters/others/s1.gif', unavailable: true },
+  { id: "s2", name: "s2", image:'../assets/characters/others/s2.gif', unavailable: true },
+  { id: "s3", name: "s3", image:'../assets/characters/others/s3.gif', unavailable: true },
+  { id: "s4", name: "s4", image:'../assets/characters/others/s4.gif', unavailable: true },
 ];
 const characterSelectState = {
     selectedCharacter: null,
     opponentCharacter: null,
-    locked: false
+    locked: false,
+    timerInterval: null,
+    timeRemaining: 30
+};
+
+const playCharacterLockSound = (characterId) => {
+    if (!characterId) return;
+
+    // Use audioManager for proper volume control
+    audioManager.playSFX(
+        `../assets/characters/${characterId}/${characterId}-select.ogg`
+    );
 };
 
 //open char select
@@ -33,18 +45,51 @@ const openCharacterSelect = ()=>{
     document.getElementById('p1-label').classList.remove('active');
     document.getElementById('p2-label').classList.remove('active');
 
+    // Restore character select background
     canvas.style.backgroundImage = "url('../assets/background/title-bg.gif')";
 
     characterSelectState.selectedCharacter = null;
     characterSelectState.opponentCharacter = null;
     characterSelectState.locked = false;
+    characterSelectState.timeRemaining = 30;
 
     player1Preview.innerHTML = '<span class="silhouette">?</span>';
     player2Preview.innerHTML = '<span class="silhouette">?</span>';
     statusText.textContent = '';
     lockBtn.disabled = true;
 
+    // Clear any existing timer
+    if (characterSelectState.timerInterval) {
+        clearInterval(characterSelectState.timerInterval);
+    }
+
+    // Start countdown timer
+    startCharacterSelectTimer();
+
     renderCharacterGrid();
+};
+
+// Timer function for character select
+const startCharacterSelectTimer = () => {
+    // Create or update timer display
+    let timerDisplay = document.getElementById('character-timer');
+    characterSelectState.timerInterval = setInterval(()=>{
+        const seconds = characterSelectState.timeRemaining;
+        // Change color based on time remaining
+        if (seconds <= 10) {
+            timerDisplay.style.color = '#FF4444';
+            timerDisplay.style.animation = 'pulse 0.5s ease-in-out infinite';
+        } else if (seconds <= 30) {
+            timerDisplay.style.color = '#FFD700';
+            timerDisplay.style.animation = 'none';
+        } else {
+            timerDisplay.style.color = '#FFF';
+            timerDisplay.style.animation = 'none';
+        }
+
+        timerDisplay.textContent = `${characterSelectState.timeRemaining}`;
+        characterSelectState.timeRemaining--;
+    }, 1000);
 };
 
 //render charcter selection ui
@@ -65,12 +110,12 @@ const renderCharacterGrid = ()=>{
             slot.textContent = char.name;
         }
 
-        if(char.locked){
+        if(char.unavailable){
           slot.classList.add('locked');
         }
     
         slot.onclick = ()=>{
-            if(characterSelectState.locked || char.locked){
+            if(characterSelectState.locked || char.unavailable){
               return;
             }
             if (char.id === characterSelectState.opponentCharacter) {
@@ -115,9 +160,22 @@ const updatePlayerPreview = (previewElement, character) => {
 //update character selection ui
 const updateSelectionUI = ()=>{
     document.querySelectorAll(".character-slot").forEach((btn, index)=>{
+        const char = CHARACTERS[index];
+        const charId = char.id;
+        
+        // Remove all dynamic classes
         btn.classList.remove("selected", "taken");
         btn.removeAttribute("data-player");
-        const charId = CHARACTERS[index].id;
+        
+        // Re-add 'locked' class only for unavailable characters
+        if (char.unavailable) {
+            btn.classList.add("locked");
+        } else {
+            // Remove 'locked' class from available characters
+            btn.classList.remove("locked");
+        }
+        
+        // Mark opponent's character as taken
         if(characterSelectState.opponentCharacter === charId && characterSelectState.selectedCharacter !== charId){
             btn.classList.add("locked", "taken");
         }
@@ -158,6 +216,8 @@ lockBtn.onclick = ()=>{
     document.getElementById('p1-label').classList.add('active');
     characterSelectState.locked = true;
     lockBtn.disabled = true;
+
+    playCharacterLockSound(characterSelectState.selectedCharacter);
     socket.emit("lockCharacter");   
     
     document.getElementById("statusText").textContent = "Locked in! Waiting for opponent...";
@@ -173,7 +233,10 @@ const showOpponentPreview = (socketId, characterId)=>{
         updatePlayerPreview(player2Preview, opponentChar);
     }
     updateSelectionUI();
-    document.getElementById('p2-label').classList.add('active');
+    if(opponentChar.locked){
+        document.getElementById('p2-label').classList.add('active');
+        playCharacterLockSound(characterId); 
+    }
 };
 
 export { openCharacterSelect, showOpponentPreview };

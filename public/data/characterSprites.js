@@ -516,7 +516,7 @@ const characterSpriteConfigs = {
                 sheet: 'attack_ultimate',
                 startFrame: 0,
                 frames: 16,
-                frameDelay: 120,
+                frameDelay: 70,
                 loop: false,
                 row: 0
             },

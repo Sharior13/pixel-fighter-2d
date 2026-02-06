@@ -32,6 +32,9 @@
 
     <div id="character-select" class="character-container hidden">
         <!-- Main Selection Area -->
+        <div class="timer-container">
+            <div class="timer-display" id="character-timer">30</div>
+        </div>
         <div class="selection-wrapper">
             <!-- Player 1 Platform -->
             <div class="player-platform">
@@ -78,45 +81,214 @@
             <button class="lock-in-button" id="lockBtn" disabled>LOCK IN</button>
         </div>
     </div>
+    <!-- battle ui -->
+    <div class="game-container hidden">
+        <!-- Left Player -->
+        <div class="character-frame left">
+            <img src="./assets/characters/rukia/rukia-icon.png" alt="Player 1" class="character-image">
+        </div>
+        <div class="character-name left">RUKIA</div>
+
+        <div class="bars-container left">
+            <div class="health-bar-wrapper">
+                <div class="health-bar-bg" id="health-bg-p1">
+                    <div class="health-bar-fill" id="health-p1"></div>
+                </div>
+            </div>
+            <div class="ultimate-bar-wrapper">
+                <div class="ultimate-bar-bg" id="ultimate-bg-p1">
+                    <div class="ultimate-bar-fill" id="ultimate-p1"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Player -->
+        <div class="character-frame right">
+            <img src="./assets/characters/naruto/naruto-icon.png" alt="Player 2" class="character-image">
+        </div>
+        <div class="character-name right">Naruto</div>
+
+        <div class="bars-container right">
+            <div class="health-bar-wrapper">
+                <div class="health-bar-bg" id="health-bg-p2">
+                    <div class="health-bar-fill" id="health-p2"></div>
+                </div>
+            </div>
+            <div class="ultimate-bar-wrapper">
+                <div class="ultimate-bar-bg" id="ultimate-bg-p2">
+                    <div class="ultimate-bar-fill" id="ultimate-p2"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Timer -->
+        <div class="timer-container">
+            <div class="timer-display" id="timer">90</div>
+        </div>
+        
+        <!-- Round Indicator -->
+        <div class="round-indicator">Fire Village</div>
+    </div>
     <!-- custom room service -->
     <section id="main-container" class="hidden main-container">
-    <div class="box">
-        <div class="top-bar">
-           <span class="custom-room">
-           <span>C</span><span>U</span><span>S</span><span>T</span><span>O</span><span>M</span>
-           <span class="space"></span>
-          <span>R</span><span>O</span><span>O</span><span>M</span>
-          </span>
-
-            <button class="back-btn btn" id="room-back">← BACK</button>
+        <div class="box">
+            <div class="top-bar">
+               <span class="custom-room">
+               <span>C</span><span>U</span><span>S</span><span>T</span><span>O</span><span>M</span>
+               <span class="space"></span>
+              <span>R</span><span>O</span><span>O</span><span>M</span>
+              </span>
+          
+                <button class="back-btn btn" id="room-back">← BACK</button>
+            </div>
+            <div class="join-wrap">
+            
+                <div class="join">
+                    <h3>JOIN</h3>
+                
+                    <div class="row">
+                        <span>Room Id</span>
+                        <input placeholder="Join" class="inp" required>
+                    </div><br>
+                
+                    <button class="btn" id="room-join-btn">Join</button>
+                </div>
+            
+                <div class="join">
+                    <h3>CREATE</h3>
+                
+                    <div class="row">
+                        <span>Room Name</span>
+                        <input placeholder="Enter Name" class="inp">
+                    </div><br>
+                
+                    <button class="btn" id="room-create-btn">Create</button>
+                </div>
+            
+            </div>
         </div>
-        <div class="join-wrap">
+    </section>
+    <!-- settings ui -->
+    <div class="settings-container hidden">
+        <div class="settings-header">
+            <h1 class="title">SETTINGS</h1>
+            <button class="back-btn" id="backBtn">← BACK</button>
+        </div>
 
-            <div class="join">
-                <h3>JOIN</h3>
+        <div class="settings-content">
+            <!-- Audio Settings Section -->
+            <div class="settings-section">
+                <h2 class="section-title">AUDIO</h2>
+                <div class="settings-group">
+                    <div class="setting-item">
+                        <label for="masterVolume">
+                            <span class="setting-label">Master Volume</span>
+                            <span class="setting-value" id="masterValue">100%</span>
+                        </label>
+                        <input type="range" id="masterVolume" min="0" max="100" value="100" class="volume-slider">
+                    </div>
 
-                <div class="row">
-                    <span>Room Id</span>
-                    <input placeholder="Join" class="inp" required>
-                </div><br>
+                    <div class="setting-item">
+                        <label for="musicVolume">
+                            <span class="setting-label">Music Volume</span>
+                            <span class="setting-value" id="musicValue">80%</span>
+                        </label>
+                        <input type="range" id="musicVolume" min="0" max="100" value="80" class="volume-slider">
+                    </div>
 
-                <button class="btn" id="room-join-btn">Join</button>
+                    <div class="setting-item">
+                        <label for="sfxVolume">
+                            <span class="setting-label">Sound Effects (SFX)</span>
+                            <span class="setting-value" id="sfxValue">90%</span>
+                        </label>
+                        <input type="range" id="sfxVolume" min="0" max="100" value="90" class="volume-slider">
+                    </div>
+                </div>
             </div>
 
-            <div class="join">
-                <h3>CREATE</h3>
+            <!-- Controls Section -->
+            <div class="settings-section">
+                <h2 class="section-title">HOW TO PLAY</h2>
+                <div class="settings-group">
+                    <div class="control-item">
+                        <span class="control-label">Move Left</span>
+                        <button class="key-btn" data-action="moveLeft">A</button>
+                    </div>
 
-                <div class="row">
-                    <span>Room Name</span>
-                    <input placeholder="Enter Name" class="inp">
-                </div><br>
+                    <div class="control-item">
+                        <span class="control-label">Move Right</span>
+                        <button class="key-btn" data-action="moveRight">D</button>
+                    </div>
 
-                <button class="btn" id="room-create-btn">Create</button>
-            </div>
+                    <div class="control-item">
+                        <span class="control-label">Jump</span>
+                        <button class="key-btn" data-action="jump">SPACE</button>
+                    </div>
 
+                    <div class="control-item">
+                        <span class="control-label">Crouch</span>
+                        <button class="key-btn" data-action="crouch">S</button>
+                    </div>
+
+                    <div class="control-item">
+                        <span class="control-label">Light Attack</span>
+                        <button class="key-btn" data-action="lightAttack">J</button>
+                    </div>
+
+                    <div class="control-item">
+                        <span class="control-label">Heavy Attack</span>
+                        <button class="key-btn" data-action="heavyAttack">F</button>
+                    </div>
+
+                    <div class="control-item">
+                        <span class="control-label">Special Move</span>
+                        <button class="key-btn" data-action="specialMove">L</button>
+                    </div>
+
+                    <div class="control-item">
+                        <span class="control-label">Block / Dodge</span>
+                        <button class="key-btn" data-action="blockDodge">SHIFT</button>
+                    </div>
+             </div>
         </div>
     </div>
-</section>
+    </div>
+    <!-- profile ui -->
+    <div class="profile-container hidden">
+        <div class="profile-card">
+            <!-- Header -->
+            <div class="profile-header">
+                <h1 class="title">PLAYER PROFILE</h1>
+            </div>
+
+            <!-- Avatar Section -->
+            <div class="avatar-section">
+                <div class="avatar-container">
+                    <img id="avatarImage" src="./assets/characters/rukia/rukia-icon.png" alt="Player Avatar">
+                </div>
+            </div>
+
+
+            <!-- Profile Info -->
+            <div class="profile-info">
+
+                <input class="username username-input"
+                    type="text" 
+                    placeholder="Enter username"
+                    value="Player"
+                    maxlength="12"
+                >
+
+            </div>
+            
+            <!-- Buttons -->
+           
+                <button class="btn btn-secondary" onclick="backToMenu()">
+                    <span>BACK TO MENU</span>
+                </button>
+            </div>
+        </div>
+    </div>
 
 
     <!-- <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script> -->
