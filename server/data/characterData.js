@@ -3,7 +3,7 @@ const CHARACTERS = {
         id: "luffy",
         name: "Luffy",
         stats: {
-            maxHealth: 100,
+            maxHealth: 1000,
             speed: 5.5,
             jumpForce: 15,
             weight: 1.0
@@ -20,7 +20,7 @@ const CHARACTERS = {
         id: "zoro",
         name: "Zoro",
         stats: {
-            maxHealth: 110,
+            maxHealth: 1100,
             speed: 5.0,
             jumpForce: 15,
             weight: 1.1
@@ -37,7 +37,7 @@ const CHARACTERS = {
         id: "naruto",
         name: "Naruto",
         stats: {
-            maxHealth: 95,
+            maxHealth: 950,
             speed: 6.0,
             jumpForce: 15,
             weight: 0.95
@@ -54,7 +54,7 @@ const CHARACTERS = {
         id: "kakashi",
         name: "Kakashi",
         stats: {
-            maxHealth: 90,
+            maxHealth: 900,
             speed: 6.5,
             jumpForce: 15,
             weight: 0.9
@@ -71,7 +71,7 @@ const CHARACTERS = {
         id: "sasuke",
         name: "Sasuke",
         stats: {
-            maxHealth: 85,
+            maxHealth: 850,
             speed: 6,
             jumpForce: 15,
             weight: 1
@@ -88,7 +88,7 @@ const CHARACTERS = {
         id: "ichigo",
         name: "Ichigo",
         stats: {
-            maxHealth: 105,
+            maxHealth: 1050,
             speed: 7.0,
             jumpForce: 15,
             weight: 1.2
@@ -105,7 +105,7 @@ const CHARACTERS = {
         id: "rukia",
         name: "Rukia",
         stats: {
-            maxHealth: 85,
+            maxHealth: 850,
             speed: 5.5,
             jumpForce: 15,
             weight: 0.7

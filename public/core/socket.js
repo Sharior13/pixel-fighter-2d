@@ -126,6 +126,8 @@ const initializeSocket = (mode, roomId) => {
     // Handle match end
     socket.on("matchEnd", ({ winner, finalStats, reason }) => {
         console.log("Match ended! Winner:", winner);
+        console.log("Final stats:", finalStats);
+        
         setTimeout(() => {
            // Stop game loop
            stopRender();
@@ -135,6 +137,9 @@ const initializeSocket = (mode, roomId) => {
 
             const localPlayer = finalStats.find(p => p.socketId === socket.id);
             const opponent = finalStats.find(p => p.socketId !== socket.id);
+            
+            console.log('[Socket] Local player stats:', localPlayer);
+            console.log('[Socket] Opponent stats:', opponent);
             
             matchEndScreen.show({
                 winner,
@@ -208,15 +213,10 @@ const processInputs = () => {
 
     inputs.push({ type: "move", direction });
 
-    // Jump
+    // Jump (audio will be played by animationStateManager when animation starts)
     if ((keys.w || keys[' ']) && !actionTriggered.jump) {
         inputs.push({ type: "jump" });
         actionTriggered.jump = true;
-        
-        // Play jump sound
-        if (currentCharacterId) {
-            audioManager.playJumpSound(currentCharacterId);
-        }
     }
 
     // Dash
@@ -225,51 +225,26 @@ const processInputs = () => {
         actionTriggered.dash = true;
     }
 
-    // Separate attack buttons
-    if (keys.q && !actionTriggered.attack1) {
+    // Attacks (audio will be played by animationStateManager when animation starts)
+    if (keys.ArrowLeft && !actionTriggered.attack1) {
         inputs.push({ type: "attack", ability: "attack1" });
         actionTriggered.attack1 = true;
-        
-        // Play attack sound
-        if (currentCharacterId) {
-            audioManager.playAttackSound(currentCharacterId, "attack1");
-        }
     }
-    if (keys.e && !actionTriggered.attack2) {
+    if (keys.ArrowRight && !actionTriggered.attack2) {
         inputs.push({ type: "attack", ability: "attack2" });
         actionTriggered.attack2 = true;
-        
-        // Play attack sound
-        if (currentCharacterId) {
-            audioManager.playAttackSound(currentCharacterId, "attack2");
-        }
     }
-    if (keys.z && !actionTriggered.basic) {
+    if (keys.ArrowUp && !actionTriggered.basic) {
         inputs.push({ type: "attack", ability: "basic" });
         actionTriggered.basic = true;
-        
-        // Play attack sound
-        if (currentCharacterId) {
-            audioManager.playAttackSound(currentCharacterId, "basic");
-        }
     }
-    if (keys.x && !actionTriggered.special) {
+    if (keys.ArrowDown && !actionTriggered.special) {
         inputs.push({ type: "attack", ability: "special" });
         actionTriggered.special = true;
-        
-        // Play attack sound
-        if (currentCharacterId) {
-            audioManager.playAttackSound(currentCharacterId, "special");
-        }
     }
-    if (keys.c && !actionTriggered.ultimate) {
+    if (keys.v && !actionTriggered.ultimate) {
         inputs.push({ type: "attack", ability: "ultimate" });
         actionTriggered.ultimate = true;
-        
-        // Play attack sound
-        if (currentCharacterId) {
-            audioManager.playAttackSound(currentCharacterId, "ultimate");
-        }
     }
 
     // Block

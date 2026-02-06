@@ -77,6 +77,11 @@ class MatchEndScreen {
         this.matchData = matchData;
         const { winner, localPlayer, opponent, reason } = matchData;
 
+        console.log('[MatchEndScreen] Showing results');
+        console.log('[MatchEndScreen] Winner:', winner);
+        console.log('[MatchEndScreen] Local player:', localPlayer);
+        console.log('[MatchEndScreen] Opponent:', opponent);
+
         const isVictory = winner === socket.id;
 
         // Set result text and styling
@@ -102,6 +107,11 @@ class MatchEndScreen {
     }
 
     updatePlayerStats(selector, playerData, isWinner) {
+        if (!playerData) {
+            console.error('[MatchEndScreen] No player data provided for', selector);
+            return;
+        }
+
         const statsContainer = this.screenElement.querySelector(selector);
 
         if (isWinner) {
@@ -110,14 +120,37 @@ class MatchEndScreen {
             statsContainer.classList.add('loser');
         }
 
-        statsContainer.querySelector('.player-character').textContent =
-            playerData.character.toUpperCase();
-        statsContainer.querySelector('.damage-dealt').textContent =
-            Math.round(playerData.damage || 0);
-        statsContainer.querySelector('.damage-taken').textContent =
-            Math.round(playerData.damageReceived || 0);
-        statsContainer.querySelector('.combo-count').textContent =
-            playerData.combo || 0;
+        // Display character name
+        const characterName = playerData.character || 'Unknown';
+        statsContainer.querySelector('.player-character').textContent = characterName.toUpperCase();
+        
+        // FIXED: Access stats from correct property structure
+        // The server sends stats in various formats, try all possible locations
+        const damageDealt = playerData.damageDealt || 
+                           playerData.damage || 
+                           (playerData.stats && playerData.stats.damageDealt) || 
+                           0;
+        
+        const damageTaken = playerData.damageReceived || 
+                           playerData.damageTaken || 
+                           (playerData.stats && playerData.stats.damageReceived) || 
+                           0;
+        
+        const comboCount = playerData.maxCombo || 
+                          playerData.combo || 
+                          (playerData.stats && playerData.stats.maxCombo) || 
+                          0;
+
+        console.log(`[MatchEndScreen] ${selector} stats:`, {
+            damageDealt,
+            damageTaken,
+            comboCount,
+            rawData: playerData
+        });
+
+        statsContainer.querySelector('.damage-dealt').textContent = Math.round(damageDealt);
+        statsContainer.querySelector('.damage-taken').textContent = Math.round(damageTaken);
+        statsContainer.querySelector('.combo-count').textContent = comboCount;
     }
 
     requestRematch() {

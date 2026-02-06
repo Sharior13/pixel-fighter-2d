@@ -3,11 +3,11 @@ const keys = {
     s: false,
     a: false,
     d: false,
-    q: false, // attack1
-    e: false, // attack2
-    z: false, // basic
-    x: false, // special
-    c: false, // ultimate
+    ArrowLeft: false, // attack1
+    ArrowRight: false, // attack2
+    ArrowUp: false, // basic
+    ArrowDown: false, // special
+    v: false, // ultimate
     Shift: false,
     ' ': false
 };
@@ -23,9 +23,10 @@ const actionTriggered = {
     block: false
 };
 
-// Normalize key to lowercase (except for special keys)
+// Normalize key to lowercase (except for special keys and arrow keys)
 function normalizeKey(key) {
-    if (key === ' ' || key === 'Shift') {
+    // Don't normalize arrow keys, space, or Shift
+    if (key === ' ' || key === 'Shift' || key.startsWith('Arrow')) {
         return key;
     }
     return key.toLowerCase();
@@ -51,11 +52,11 @@ window.addEventListener('keyup', (event) => {
         if (normalizedKey === 'Shift') {
             actionTriggered.dash = false;
         }
-        if (normalizedKey === 'q') actionTriggered.attack1 = false;
-        if (normalizedKey === 'e') actionTriggered.attack2 = false;
-        if (normalizedKey === 'z') actionTriggered.basic = false;
-        if (normalizedKey === 'x') actionTriggered.special = false;
-        if (normalizedKey === 'c') actionTriggered.ultimate = false;
+        if (normalizedKey === 'ArrowLeft') actionTriggered.attack1 = false;
+        if (normalizedKey === 'ArrowRight') actionTriggered.attack2 = false;
+        if (normalizedKey === 'ArrowUp') actionTriggered.basic = false;
+        if (normalizedKey === 'ArrowDown') actionTriggered.special = false;
+        if (normalizedKey === 'v') actionTriggered.ultimate = false;
     }
 });
 

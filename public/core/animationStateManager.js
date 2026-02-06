@@ -51,15 +51,18 @@ class AnimationStateManager {
         this.playerAnimators = new Map(); // Map<socketId, animator>
         this.playerStates = new Map();    // Map<socketId, AnimationState>
         this.previousFrameData = new Map(); // Map<socketId, FrameData>
+        this.playerCharacters = new Map(); // Map<socketId, characterId>
+        this.audioManager = null; // Will be set externally
     }
 
-    registerPlayer(socketId, animator) {
+    registerPlayer(socketId, animator, characterId) {
         if (!socketId || !animator) {
             console.error('[AnimationStateManager] Invalid registration parameters');
             return;
         }
 
         this.playerAnimators.set(socketId, animator);
+        this.playerCharacters.set(socketId, characterId);
         
         this.playerStates.set(socketId, {
             current: AnimationStateManager.ANIMATIONS.IDLE,
@@ -75,14 +78,20 @@ class AnimationStateManager {
             isAttacking: false
         });
         
-        console.log(`[AnimationStateManager] Registered player: ${socketId}`);
+        console.log(`[AnimationStateManager] Registered player: ${socketId} (${characterId})`);
     }
 
     unregisterPlayer(socketId) {
         this.playerAnimators.delete(socketId);
         this.playerStates.delete(socketId);
         this.previousFrameData.delete(socketId);
+        this.playerCharacters.delete(socketId);
         console.log(`[AnimationStateManager] Unregistered player: ${socketId}`);
+    }
+
+    setAudioManager(audioManager) {
+        this.audioManager = audioManager;
+        console.log('[AnimationStateManager] Audio manager set');
     }
 
     updatePlayerAnimation(player, deltaTime) {
@@ -105,7 +114,7 @@ class AnimationStateManager {
         
         // Check if we can transition to the new animation
         if (this.canTransitionTo(targetAnimation, currentAnimState, animator)) {
-            this.transitionToAnimation(player.socketId, targetAnimation, animator, currentAnimState);
+            this.transitionToAnimation(player.socketId, targetAnimation, animator, currentAnimState, player.character);
         }
         
         // Update the animator
@@ -213,15 +222,57 @@ class AnimationStateManager {
         return true;
     }
 
-    transitionToAnimation(socketId, targetAnimation, animator, currentAnimState) {
+    transitionToAnimation(socketId, targetAnimation, animator, currentAnimState, characterId) {
         animator.setAnimation(targetAnimation, true);
         
         console.log(
             `[AnimationState] ${socketId}: ${currentAnimState.current} -> ${targetAnimation}`
         );
         
+        // Play audio when animation successfully starts
+        this.playAnimationAudio(socketId, targetAnimation, characterId);
+        
         currentAnimState.previous = currentAnimState.current;
         currentAnimState.current = targetAnimation;
+    }
+
+    playAnimationAudio(socketId, animationName, characterId) {
+        if (!this.audioManager) {
+            return;
+        }
+
+        // Use stored character ID if not provided
+        if (!characterId) {
+            characterId = this.playerCharacters.get(socketId);
+        }
+
+        if (!characterId) {
+            console.warn(`[AnimationStateManager] No character ID for ${socketId}`);
+            return;
+        }
+
+        // Map animations to audio actions
+        const audioActionMap = {
+            'attack1': 'attack1',
+            'attack2': 'attack2',
+            'attack_basic': 'basic',
+            'attack_special': 'special',
+            'attack_ultimate': 'ultimate',
+            'jump': 'jump'
+        };
+
+        const audioAction = audioActionMap[animationName];
+        
+        if (audioAction) {
+            if (audioAction === 'jump') {
+                this.audioManager.playJumpSound(characterId);
+            } else {
+                // Attack sounds
+                this.audioManager.playAttackSound(characterId, audioAction);
+            }
+            
+            console.log(`[AnimationStateManager] Playing ${audioAction} sound for ${characterId}`);
+        }
     }
 
     updatePreviousFrameData(player, previousFrame) {
@@ -262,6 +313,7 @@ class AnimationStateManager {
         this.playerAnimators.clear();
         this.playerStates.clear();
         this.previousFrameData.clear();
+        this.playerCharacters.clear();
         console.log('[AnimationStateManager] Cleared all players');
     }
 
@@ -269,7 +321,8 @@ class AnimationStateManager {
         return {
             hasAnimator: this.playerAnimators.has(socketId),
             state: this.playerStates.get(socketId),
-            previousFrame: this.previousFrameData.get(socketId)
+            previousFrame: this.previousFrameData.get(socketId),
+            characterId: this.playerCharacters.get(socketId)
         };
     }
 }

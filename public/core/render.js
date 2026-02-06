@@ -9,14 +9,6 @@ import { audioManager } from "./audioManager.js";
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-canvas.width = window.innerWidth;
-canvas.height = window.innerHeight;
-//resize canvas on window resize
-window.addEventListener('resize', ()=>{
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-});
-
 let isRendering = false;
 let currentGameState = null;
 let animationFrameId = null;
@@ -24,7 +16,19 @@ let currentMap = null;
 let bgImg = null;
 let lastFrameTime = performance.now();
 
-// FIXED: Add KO overlay state
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+//resize canvas on window resize
+window.addEventListener('resize', ()=>{
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    if(bgImg){
+        bgImg.style.width = currentMap.width + 'px';
+        bgImg.style.height = currentMap.height + 'px';
+    }
+});
+
+
 let showKOOverlay = false;
 let koAnimationStartTime = 0;
 const KO_DISPLAY_DURATION = 2000; // Show KO for 2 seconds
@@ -77,6 +81,9 @@ const updateGameState = (state)=>{
     
     // Initialize sprite animators for new players
     if (isFirstState && state.players) {
+        // Set audio manager reference in animationStateManager
+        animationStateManager.setAudioManager(audioManager);
+        
         state.players.forEach(player => {
             initializePlayerSprites(player);
             // Initialize health tracker
@@ -119,7 +126,8 @@ const initializePlayerSprites = (player) => {
     
     const animator = spriteManager.getAnimator(characterId);
     if (animator) {
-        animationStateManager.registerPlayer(player.socketId, animator);
+        // Pass character ID to animationStateManager for audio playback
+        animationStateManager.registerPlayer(player.socketId, animator, characterId);
         console.log(`[Render] Initialized sprites for player: ${player.socketId} (${characterId})`);
     }
 };
