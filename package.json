@@ -8,11 +8,16 @@
   "main": "server.js",
   "scripts": {
     "start": "node server/server.js",
-    "start-nodemon": "nodemon server/server.js"
+    "start-nodemon": "nodemon server/server.js",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
   "dependencies": {
     "express": "^5.2.1",
     "nodemon": "^3.1.11",
     "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "wrangler": "^4.70.0"
   }
 }
