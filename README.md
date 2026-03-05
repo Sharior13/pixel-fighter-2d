@@ -34,7 +34,7 @@ npm install
 
 3. Start the server:
 ```bash
-node server.js
+node server/server.js
 ```
 
 4. Open your browser and navigate to:
@@ -72,16 +72,19 @@ project-root/
 ### Controls
 
 - **A / D**: Move your character
-- **W**: Jump
+- **W / Space**: Jump
 - **S**: Block Damage
-- **Z / J**: Basic Attack
-- **C / L**: Special Ability
+- **Arrow Up**: Basic Attack
+- **Arrow Left**: Attack 1
+- **Arrow Right**: Attack 2
+- **Arrow Down**: Special Ability
+- **V**: Ultimate Ability
 
 ### Gameplay Flow
 
-1. **Title Screen**: Click "Find Match" to enter matchmaking
+1. **Title Screen**: Click "Find Match" to enter matchmaking or create/join a room
 2. **Matchmaking**: Wait for an opponent (automatic pairing)
-3. **Character Selection**: Choose your character (10 seconds)
+3. **Character Selection**: Choose your character (30 seconds)
 4. **Fight**: Battle your opponent until time runs out or someone's health reaches zero
 5. **Results**: View the winner and return to title screen
 
@@ -99,7 +102,7 @@ The game uses a server-authoritative architecture where:
 
 #### Input Buffer System
 - Clients send inputs at 60 FPS continuously
-- Server buffers up to 3 inputs per player
+- Server buffers up to 10 inputs per player
 - Game tick processes one input from buffer per tick
 - Ensures no input loss due to network jitter
 
@@ -140,7 +143,6 @@ The game uses a server-authoritative architecture where:
 - **Backend**: Node.js, Express
 - **Real-time Communication**: Socket.io
 - **Frontend**: HTML5 Canvas, Vanilla JavaScript
-- **Architecture Documentation**: Mermaid.js
 
 ## Performance
 
